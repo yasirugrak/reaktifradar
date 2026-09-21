@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Services\ImportFailure;
 use App\Services\LegacyImporter;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
 use Throwable;
 
 class ImportLegacy extends Command
@@ -18,8 +20,14 @@ class ImportLegacy extends Command
             $counts = $importer->run(! $this->option('apply'));
         } catch (Throwable $exception) {
             // Never print SQL bindings, encrypted payloads, passwords or source keys.
-            $this->error('Taşıma tamamlanamadı; hedef kayıtları geri alındı. Bağlantı, anahtar, şema ve boş hedef koşullarını kontrol edin.');
+            $this->error($this->option('apply') ? 'Taşıma tamamlanamadı; hedef kayıtları geri alındı.' : 'Ön kontrol tamamlanamadı. Veri yazılmadı.');
             $this->line('Hata türü: '.class_basename($exception));
+            if ($exception instanceof QueryException) {
+                $diagnosis = ImportFailure::describe($exception);
+                $this->line('Bağlantı: '.$diagnosis['connection']);
+                $this->line('SQLSTATE: '.$diagnosis['state']);
+                $this->error($diagnosis['reason']);
+            }
 
             return self::FAILURE;
         }
