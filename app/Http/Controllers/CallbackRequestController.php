@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CallbackRequested;
 use App\Models\CallbackRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use RuntimeException;
+use Throwable;
 
 class CallbackRequestController
 {
@@ -27,7 +32,17 @@ class CallbackRequestController
             'phone.regex' => 'Geçerli bir telefon numarası girin.',
             'contact_permission.accepted' => 'Talebiniz için sizinle iletişime geçmemize izin verin.',
         ]);
-        CallbackRequest::create(collect($data)->only(['name', 'phone', 'company'])->all());
+        $callback = CallbackRequest::create(collect($data)->only(['name', 'phone', 'company'])->all());
+        try {
+            $recipient = config('contact.notification_email') ?: config('contact.email');
+            if (! is_string($recipient) || ! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                throw new RuntimeException('Missing notification recipient');
+            }
+            Mail::mailer('smtp')->to($recipient)->send(new CallbackRequested($callback));
+        } catch (Throwable) {
+            // Preserve the request and never log SMTP credentials or personal details.
+            Log::warning('Callback notification could not be sent; request remains in admin panel.', ['callback_request_id' => $callback->id]);
+        }
 
         return redirect()->to(rtrim(route('home'), '/').'/#iletisim')->with('callback_success', 'Talebiniz alındı. Ekibimiz hizmet detaylarını görüşmek için sizi arayacak.');
     }
