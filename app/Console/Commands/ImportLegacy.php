@@ -27,6 +27,13 @@ class ImportLegacy extends Command
                 $this->line('Bağlantı: '.$diagnosis['connection']);
                 $this->line('SQLSTATE: '.$diagnosis['state']);
                 $this->error($diagnosis['reason']);
+            } elseif (in_array($exception->getMessage(), [
+                'Taşıma yalnızca PostgreSQL ile destekleniyor.',
+                'Kaynak ve hedef aynı veritabanı olamaz.',
+                'Hedef tablolar boş olmalı; mevcut verilerin üzerine yazılmadı.',
+                'Taşınan kayıtların içerik doğrulaması başarısız. İşlem geri alındı.',
+            ], true)) {
+                $this->error($exception->getMessage());
             }
 
             return self::FAILURE;
