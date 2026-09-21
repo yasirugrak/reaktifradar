@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ReaktifRadar — Ölçümden müdahaleye, mühendislik takibi</title>
-    <meta name="description" content="Tesisinizin reaktif enerji değerlerini mühendisimizle takip ediyoruz. Günlük rapor, eşik aşımlarında ek uyarı ve arıza durumunda müdahale planlaması için bizimle görüşün.">
+    <title>ReaktifRadar — Reaktif ceza riskini azaltın, bütçenizi koruyun</title>
+    <meta name="description" content="Reaktif ceza riskine karşı önlem alın. Mühendis takibi, günlük rapor ve sorunlarda ek uyarılarla tesisinizin reaktif enerji değerlerini kontrol altında tutmanıza yardımcı oluyoruz.">
     <link rel="stylesheet" href="{{ asset('css/landing.css') }}?v=service-2">
 </head>
 <body>
@@ -16,16 +16,16 @@
 <header class="wrap header">
     <a class="brand" href="{{ route('home') }}" aria-label="ReaktifRadar ana sayfa"><span class="brand-mark" aria-hidden="true">↗</span>Reaktif<span>Radar</span></a>
     <nav aria-label="Ana menü"><a href="#hizmet">Hizmetimiz</a><a href="#surec">Nasıl çalışır?</a><a href="#sorular">Sorularınız</a></nav>
-    <a class="login" href="{{ route('enerjisa.login') }}">Müşteri girişi <span aria-hidden="true">↗</span></a>
+    <a class="login" href="#iletisim">Beni arayın <span aria-hidden="true">↗</span></a>
 </header>
 <main id="icerik">
 <section class="wrap hero">
     <div class="hero-copy">
-        <p class="eyebrow"><span></span> REAKTİF ENERJİ TAKİP HİZMETİ</p>
-        <h1>Değerleri izleriz.<br>Riski bildiririz.<br><em>Yanınızda oluruz.</em></h1>
-        <p class="lead">Tesisinizin reaktif enerji takibini mühendisimize bırakın. Verilerinizi inceleyelim, günlük raporunuzu sunalım; sorunlarda sizi uyarıp müdahaleyi birlikte planlayalım.</p>
-        <div class="actions"><a class="button primary" href="#iletisim">Tesisim için görüşelim <span aria-hidden="true">↗</span></a>@if($phone)<a class="text-link" href="tel:{{ $dial }}">{{ $phone }}</a>@else<a class="text-link" href="#surec">Hizmeti keşfedin ↓</a>@endif</div>
-        <p class="hero-note">Yetkilendirilmiş veri erişimi. Mühendis değerlendirmesi.<br>İşletmenize uygun takip ve müdahale planı.</p>
+        <p class="eyebrow"><span></span> REAKTİF CEZA RİSKİNE KARŞI MÜHENDİS TAKİBİ</p>
+        <h1>Reaktif cezayı<br>faturada görmeden<br><em>önlem alın.</em></h1>
+        <p class="lead">Bütçeniz cezalara değil, işletmenize kalsın. Reaktif enerji değerlerinizi mühendisimizle takip ediyor, günlük rapor sunuyoruz. Riskli değerlerde ek uyarı yapıyor, sorunun giderilmesi için müdahaleyi planlıyoruz.</p>
+        <div class="actions"><a class="button primary" href="#iletisim">Ceza riskini konuşalım <span aria-hidden="true">↗</span></a>@if($phone)<a class="text-link" href="tel:{{ $dial }}">{{ $phone }}</a>@else<a class="text-link" href="#surec">Hizmeti keşfedin ↓</a>@endif</div>
+        <p class="hero-note">Günlük takip. Açık raporlama. Sorunlarda mühendis desteği.<br>Gereksiz maliyetlere karşı tesisinize uygun bir plan.</p>
     </div>
     <div class="report-scene" aria-label="Örnek günlük rapor görünümü">
         <div class="scene-top"><span>TESİSİNİZDEN BİR GÜNLÜK BAKIŞ</span><span class="sample">Örnek rapor</span></div>
@@ -38,17 +38,17 @@
             <div class="chart-axis"><span>00.00</span><span>09.00</span><span>18.00</span></div>
             <div class="engineer-note"><span aria-hidden="true">!</span><div><strong>Ek uyarı · Endüktif oran yükseldi</strong><p>Kompanzasyon sisteminin kontrolü için mühendis değerlendirmesi ve müdahale planı.</p></div></div>
         </article>
-        <div class="report-bottom"><span aria-hidden="true">↳</span><p><strong>Veriden anlaşılır aksiyona.</strong><br>Ne olduğunu ve sıradaki adımı birlikte görelim.</p></div>
+        <div class="report-bottom"><span aria-hidden="true">↳</span><p><strong>Ceza riskine karşı harekete geçin.</strong><br>Uyarıyı görün, mühendisimizle sonraki adımı belirleyin.</p></div>
         <p class="sample-note">Görseldeki tesis, ölçümler ve değerlendirme örnektir.</p>
     </div>
 </section>
 <div class="promise-bar"><div class="wrap"><span>01 <strong>Mühendis takibi</strong></span><span>02 <strong>Günlük raporlama</strong></span><span>03 <strong>Sorunlarda ek uyarı</strong></span><span>04 <strong>Müdahale planlaması</strong></span></div></div>
 <section id="hizmet" class="wrap section">
-    <div class="section-heading"><div><p class="eyebrow">BİR PANELDEN DAHA FAZLASI</p><h2>Takibin arkasında<br>bir mühendis var.</h2></div><p>Grafikleri tek başınıza yorumlamanız gerekmez. Ölçümleri anlamlandırıyor, dikkatinizi gerektiren durumları açıkça paylaşıyoruz.</p></div>
+    <div class="section-heading"><div><p class="eyebrow">GEREKSİZ MALİYETE KARŞI DÜZENLİ TAKİP</p><h2>Ceza ödemek yerine,<br>önlem almaya odaklanın.</h2></div><p>Hedefimiz, reaktif ceza riskini azaltmanıza yardımcı olmak. Değerleri sizin yerinize takip eder, sorunları mühendisimizle değerlendirir ve atılacak adımı açıkça paylaşırız.</p></div>
     <div class="service-grid">
-        <article><span class="service-number">01 / TAKİP</span><h3>Tesisinize düzenli bakış</h3><p>Yetkilendirdiğiniz ölçüm verileri üzerinden endüktif ve kapasitif oranları takip eder, günlük değişimleri mühendisimizle değerlendiririz.</p><div class="card-foot">Ölçüm → İnceleme → Değerlendirme</div></article>
-        <article><span class="service-number">02 / BİLGİLENDİRME</span><h3>Her gün anlaşılır rapor</h3><p>Sorun olmasa da tesisinizin durumunu bilin. Günlük raporlarla mevcut tabloyu, eşik aşımlarında ise ek uyarıları e-posta ve Telegram üzerinden paylaşırız.</p><div class="card-foot">Günlük özet + Sorunlarda ek uyarı</div></article>
-        <article><span class="service-number">03 / MÜDAHALE</span><h3>Sorunda birlikte hareket</h3><p>Arıza veya uygunsuz değer tespitinde sizinle iletişime geçer, gerekli kontrol ve müdahaleyi hizmet kapsamınıza göre planlarız.</p><div class="card-foot">İletişim → Kontrol → Müdahale</div></article>
+        <article><span class="service-number">01 / TAKİP</span><h3>Riski gözden kaçırmayın</h3><p>Endüktif ve kapasitif oranları düzenli takip eder, yükselen değerleri mühendisimizle değerlendiririz. Böylece ceza riskine karşı hangi noktada önlem gerektiğini birlikte görürüz.</p><div class="card-foot">Ölçüm → İnceleme → Değerlendirme</div></article>
+        <article><span class="service-number">02 / BİLGİLENDİRME</span><h3>Faturayı beklemeyin</h3><p>Sorun olmasa da tesisinizin durumunu bilin. Günlük raporlarla mevcut tabloyu, eşik aşımlarında ise ek uyarıları e-posta ve Telegram üzerinden paylaşırız.</p><div class="card-foot">Günlük özet + Sorunlarda ek uyarı</div></article>
+        <article><span class="service-number">03 / MÜDAHALE</span><h3>Uyarıyla sınırlı kalmayın</h3><p>Arıza veya uygunsuz değer tespitinde sizinle iletişime geçer, gerekli kontrol ve müdahaleyi hizmet kapsamınıza göre planlarız.</p><div class="card-foot">İletişim → Kontrol → Müdahale</div></article>
     </div>
 </section>
 <section id="surec" class="workflow"><div class="wrap section">
@@ -63,11 +63,11 @@
     <details><summary>Hizmet bedeli nasıl belirleniyor?</summary><p>Tesis sayısı, takip ihtiyacı ve müdahale kapsamına göre teklif hazırlıyoruz. İletişim bilgilerinizi bırakın; tesisinize uygun hizmeti görüşelim.</p></details>
 </div></section>
 <section id="iletisim" class="contact-section"><div class="wrap contact-grid">
-    <div><p class="eyebrow">TANIŞALIM</p><h2>Tesisinizin takibini<br>birlikte planlayalım.</h2><p class="contact-lead">Bizi arayın, e-posta gönderin veya numaranızı bırakın. İhtiyacınızı dinleyip size uygun hizmeti konuşalım.</p>
+    <div><p class="eyebrow">TANIŞALIM</p><h2>Bir sonraki faturadan<br>önce konuşalım.</h2><p class="contact-lead">Reaktif ceza ödüyor ya da ödeme riskinden endişe ediyorsanız birlikte değerlendirelim. Bizi arayın, e-posta gönderin veya numaranızı bırakın.</p>
         <div class="contact-links">@if($phone)<a href="tel:{{ $dial }}"><span>TELEFON</span><strong>{{ $phone }} ↗</strong></a>@endif @if($email)<a href="mailto:{{ $email }}"><span>E-POSTA</span><strong>{{ $email }} ↗</strong></a>@endif</div>
         <p class="contact-note">İlk görüşmede veri erişimini, raporlama düzenini ve müdahale kapsamını netleştiriyoruz.</p>
     </div>
-    <div class="callback-card"><h3>Sizi arayalım.</h3><p>Kısa bir tanışma, doğru bir başlangıç.</p>
+    <div class="callback-card"><h3>Sizi arayalım.</h3><p>Tesisinizi ve ceza riskini birlikte konuşalım.</p>
         @if(session('callback_success'))<div class="success" role="status">{{ session('callback_success') }}</div>@endif
         @if($errors->any())<div class="errors" role="alert"><strong>Bilgilerinizi kontrol edin.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         <form action="{{ route('callback.store') }}" method="POST">@csrf
@@ -82,5 +82,5 @@
     </div>
 </div></section>
 </main>
-<footer class="wrap footer"><a class="brand" href="{{ route('home') }}">Reaktif<span>Radar</span></a><p>Ölçümden müdahaleye, mühendislik takibi.</p><span>© {{ date('Y') }} ReaktifRadar</span></footer>
+<footer class="wrap footer"><a class="brand" href="{{ route('home') }}">Reaktif<span>Radar</span></a><p>Reaktif ceza riskine karşı, yanınızdayız.</p><span>© {{ date('Y') }} ReaktifRadar</span></footer>
 </body></html>

@@ -21,8 +21,8 @@ class ServiceLandingTest extends TestCase
     {
         config(['contact.phone' => '+90 555 123 45 67', 'contact.email' => 'hello@example.test']);
         $this->get('/')->assertOk()->assertSee('tel:+905551234567', false)
-            ->assertSee('mailto:hello@example.test', false)->assertSee('/panel/login', false)
-            ->assertSee('Beni arayın')->assertDontSee('Enerjisa')->assertDontSee('BEDAŞ');
+            ->assertSee('mailto:hello@example.test', false)->assertDontSee('/panel/login', false)->assertDontSee('Müşteri girişi')
+            ->assertSee('Reaktif cezayı')->assertSee('Beni arayın')->assertDontSee('Enerjisa')->assertDontSee('BEDAŞ');
         $this->get('/panel')->assertRedirect('/panel/login');
         $this->get('/admin/login')->assertOk();
         $this->get('/enerjisa/reactive?period=daily')->assertRedirect('/panel/reactive?period=daily');
