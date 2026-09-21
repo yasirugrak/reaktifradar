@@ -1,0 +1,30 @@
+name: reaktifradar
+x-app: &app
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: reaktifradar/app:local
+  working_dir: /var/www/html/reaktifradar
+  volumes:
+    - .:/var/www/html/reaktifradar
+  environment:
+    TZ: Europe/Istanbul
+  user: "${APP_UID:-1000}:${APP_GID:-1000}"
+  restart: unless-stopped
+  networks:
+    - platform
+    - shared
+services:
+  app:
+    <<: *app
+  scheduler:
+    <<: *app
+    command: php artisan schedule:work
+    profiles: [notifications]
+networks:
+  platform:
+    external: true
+    name: ${PLATFORM_NETWORK:-egitim-platform}
+  shared:
+    external: true
+    name: ${SHARED_NETWORK:-yasir_net}

@@ -1,0 +1,13 @@
+/vendor/
+/.env
+/.env.*
+!/.env.example
+/.phpunit.cache/
+/bootstrap/cache/*.php
+/public/css/filament/
+/public/js/filament/
+/public/fonts/filament/
+*.log
+.DS_Store
+
+/.phpunit.result.cache

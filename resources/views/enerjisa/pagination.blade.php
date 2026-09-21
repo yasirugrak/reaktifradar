@@ -1,0 +1,1 @@
+@if($paginator->hasPages())<nav class="pagination" aria-label="Sayfalar"><div>@if($paginator->previousPageUrl())<a href="{{ $paginator->previousPageUrl() }}">← Önceki</a>@endif</div><span>{{ $paginator->currentPage() }} / {{ $paginator->lastPage() }}</span><div>@if($paginator->nextPageUrl())<a href="{{ $paginator->nextPageUrl() }}">Sonraki →</a>@endif</div></nav>@endif
