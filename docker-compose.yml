@@ -47,7 +47,7 @@ services:
     <<: *app
     container_name: reaktifradar-scheduler
     command: php artisan schedule:work
-    profiles: [notifications]
+    # profiles: [notifications]
 
 # OkuKid önce başlatılmış olmalı. Farklı compose projeleri arasında
 # depends_on çalışmaz; mevcut servisler dış ağ üzerinden bulunur.
