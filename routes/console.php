@@ -23,7 +23,7 @@ Artisan::command('enerjisa:telegram-webhook', function (): int {
     $settings = app(TelegramSettings::class)->all();
     $token = (string) ($settings['token'] ?? '');
     $secret = (string) ($settings['webhook_secret'] ?? '');
-    $url = rtrim((string) config('app.url'), '/').'/enerjisa/telegram/webhook';
+    $url = rtrim((string) config('app.url'), '/').'/panel/telegram/webhook';
     if ($token === '' || ! preg_match('/^[A-Za-z0-9_-]{32,256}$/', $secret) || ! str_starts_with($url, 'https://')) {
         $this->error('Merkezi bot token, en az 32 karakterlik webhook secret ve HTTPS APP_URL gereklidir.');
 

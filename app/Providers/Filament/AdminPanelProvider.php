@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\EnerjisaAdmin;
+use App\Filament\Resources\CallbackRequestResource;
 use App\Filament\Resources\EnerjisaAccountResource;
 use App\Filament\Resources\EnerjisaMemberResource;
 use App\Filament\Resources\PanelUserResource;
@@ -31,7 +32,7 @@ final class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('panel')
+            ->path('admin')
             ->login()
             ->brandName('ReaktifRadar')
             ->brandLogoHeight('2.5rem')
@@ -43,7 +44,7 @@ final class AdminPanelProvider extends PanelProvider
                 'danger' => Color::Rose,
             ])
             ->navigationGroups(['ReaktifRadar', 'Sistem'])
-            ->resources([EnerjisaAccountResource::class, EnerjisaMemberResource::class, PanelUserResource::class])
+            ->resources([CallbackRequestResource::class, EnerjisaAccountResource::class, EnerjisaMemberResource::class, PanelUserResource::class])
             ->pages([
                 Dashboard::class,
                 EnerjisaAdmin::class,

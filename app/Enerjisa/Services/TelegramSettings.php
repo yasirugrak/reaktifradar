@@ -25,7 +25,7 @@ class TelegramSettings
 
     public function connect(string $token, int $adminId): void
     {
-        $url = rtrim((string) config('app.url'), '/').'/enerjisa/telegram/webhook';
+        $url = rtrim((string) config('app.url'), '/').'/panel/telegram/webhook';
         if (! str_starts_with($url, 'https://')) {
             throw new RuntimeException('Sunucunun APP_URL ayarı geçerli bir HTTPS adresi olmalıdır.');
         }

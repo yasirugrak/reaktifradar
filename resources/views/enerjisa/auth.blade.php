@@ -4,7 +4,7 @@
 <div class="auth-page">
     <div class="auth-intro">
         <div><div class="brand"><b>ϟ</b> ReaktifRadar</div><div class="caption">ENERJİ VERİ YÖNETİMİ</div></div>
-        <div><h1>Enerji veriniz.<br>Tek bir yerde.</h1><p>Tesisatlarınızı görüntüleyin, tüketim ve üretim verilerinizi sorgulayın. Başkent EDAŞ MDM servislerine bağlı çalışma alanınız.</p></div>
+        <div><h1>Enerji veriniz.<br>Tek bir yerde.</h1><p>Tesisatlarınızı görüntüleyin, tüketim ve üretim verilerinizi sorgulayın. Mühendislik takibi ve günlük raporlar için çalışma alanınız.</p></div>
         <div class="caption">BAŞKENT EDAŞ · MDM ENTEGRASYONU</div>
     </div>
     <main class="auth-content"><div class="auth-form">
@@ -24,7 +24,7 @@
             <button type="submit" class="button">{{ $register ? 'Çalışma alanı oluştur →' : 'Giriş yap →' }}</button>
         </form>
         <p class="auth-note">@if($register)Hesabınız var mı? <a href="{{ route('enerjisa.login') }}">Giriş yapın</a>@else İlk kez mi kullanıyorsunuz? <a href="{{ route('enerjisa.register') }}">Hesap oluşturun</a>@endif</p>
-        <p class="auth-note">Panel hesabınız ve Enerjisa servis hesabınız ayrıdır.</p>
+        <p class="auth-note">Panel hesabınız ve veri erişim hesabınız ayrıdır.</p>
     </div></main>
 </div>
 @endsection

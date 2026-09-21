@@ -19,7 +19,7 @@
             <a href="{{ route('enerjisa.'.$route) }}" class="{{ request()->routeIs('enerjisa.'.$route) ? 'active' : '' }}"><small>0{{ $loop->iteration }}</small>{{ $label }}</a>
             @endforeach
         </nav>
-        <div class="sidebar-foot">Başkent EDAŞ · MDM<br>Enerji veri yönetimi</div>
+        <div class="sidebar-foot">ReaktifRadar<br>Enerji veri yönetimi</div>
     </aside>
     <div class="workspace">
         <header class="topbar"><div><strong>{{ $account->name }}</strong><div class="muted" style="font-size:11px">Firma çalışma alanı</div></div><div class="topbar-right"><span>{{ auth('enerjisa')->user()->name }}</span><form method="post" action="{{ route('enerjisa.logout') }}">@csrf<button class="link-button">Çıkış</button></form></div></header>

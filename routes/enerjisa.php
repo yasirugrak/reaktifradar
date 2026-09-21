@@ -8,7 +8,7 @@ use App\Enerjisa\Http\ReactiveController;
 use App\Enerjisa\Http\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('enerjisa')->name('enerjisa.')->group(function () {
+Route::prefix('panel')->name('enerjisa.')->group(function () {
     Route::post('telegram/webhook', TelegramWebhookController::class)->name('telegram.webhook');
     Route::view('login', 'enerjisa.auth', ['register' => false])->name('login');
     Route::view('register', 'enerjisa.auth', ['register' => true])->name('register');

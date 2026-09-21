@@ -1,64 +1,86 @@
 <!doctype html>
 <html lang="tr">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ReaktifRadar — Reaktif enerjiyi görün, zamanında harekete geçin</title>
-    <meta name="description" content="Tesisatlarınızın endüktif ve kapasitif oranlarını tek panelden izleyin. Saatlik, günlük ve aylık analizlerle eşik aşımlarını görün; e-posta ve Telegram raporlarıyla takipte kalın.">
-    <meta name="theme-color" content="#f5f6f0">
-    <meta property="og:title" content="ReaktifRadar — Enerjiniz radarınızda.">
-    <meta property="og:description" content="Reaktif enerji oranlarını takip edin. Eşik aşımlarını görün. Tesisatlarınızı tek bir yerden yönetin.">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="tr_TR">
-    <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ReaktifRadar — Ölçümden müdahaleye, mühendislik takibi</title>
+    <meta name="description" content="Tesisinizin reaktif enerji değerlerini mühendisimizle takip ediyoruz. Günlük rapor, eşik aşımlarında ek uyarı ve arıza durumunda müdahale planlaması için bizimle görüşün.">
+    <link rel="stylesheet" href="{{ asset('css/landing.css') }}?v=service-2">
 </head>
 <body>
-<a class="skip" href="#main">İçeriğe geç</a>
-<header class="header wrap">
-    <a href="{{ url('/') }}" class="brand" aria-label="ReaktifRadar ana sayfa"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="6"/><path d="M16 16 25 7"/><circle class="blip" cx="24" cy="8" r="3"/></svg></span>Reaktif<span>Radar</span></a>
-    <nav aria-label="Ana menü"><a href="#ozellikler">Neler sunuyor?</a><a href="#nasil-calisir">Nasıl çalışır?</a><a href="#sorular">Sorular</a></nav>
-    <div class="header-actions"><a class="login" href="{{ route('enerjisa.login') }}">Giriş yap</a><a class="button small" href="{{ route('enerjisa.register') }}">Hemen başla <span aria-hidden="true">↗</span></a></div>
+@php
+    $phone = trim((string) config('contact.phone'));
+    $dial = preg_replace('/[^+0-9]/', '', $phone);
+    $email = trim((string) config('contact.email'));
+@endphp
+<a class="skip" href="#icerik">İçeriğe geç</a>
+<header class="wrap header">
+    <a class="brand" href="{{ route('home') }}" aria-label="ReaktifRadar ana sayfa"><span class="brand-mark" aria-hidden="true">↗</span>Reaktif<span>Radar</span></a>
+    <nav aria-label="Ana menü"><a href="#hizmet">Hizmetimiz</a><a href="#surec">Nasıl çalışır?</a><a href="#sorular">Sorularınız</a></nav>
+    <a class="login" href="{{ route('enerjisa.login') }}">Müşteri girişi <span aria-hidden="true">↗</span></a>
 </header>
-<main id="main">
-<section class="hero wrap">
+<main id="icerik">
+<section class="wrap hero">
     <div class="hero-copy">
-        <div class="eyebrow"><span class="live-dot"></span> ENERJİ TAKİBİNDE YENİ BİR BAKIŞ</div>
-        <h1>Enerjiniz<br><span class="underlined">radarınızda.</span><br>Kontrol sizde.</h1>
-        <p class="hero-description">Endüktif ve kapasitif oranları takip edin, eşik aşımlarını görün. Tesisatlarınızın reaktif enerji verisini anlaşılır bir aksiyon planına dönüştürün.</p>
-        <div class="hero-actions"><a class="button" href="{{ route('enerjisa.register') }}">Tesisatımı takip etmek istiyorum <span aria-hidden="true">↗</span></a><a class="text-link" href="#panel">Paneli keşfet <span aria-hidden="true">↓</span></a></div>
-        <div class="hero-footnote"><span aria-hidden="true">✓</span> Tek panelde tüm tesisatlarınız <span class="separator">/</span> E-posta & Telegram</div>
+        <p class="eyebrow"><span></span> REAKTİF ENERJİ TAKİP HİZMETİ</p>
+        <h1>Değerleri izleriz.<br>Riski bildiririz.<br><em>Yanınızda oluruz.</em></h1>
+        <p class="lead">Tesisinizin reaktif enerji takibini mühendisimize bırakın. Verilerinizi inceleyelim, günlük raporunuzu sunalım; sorunlarda sizi uyarıp müdahaleyi birlikte planlayalım.</p>
+        <div class="actions"><a class="button primary" href="#iletisim">Tesisim için görüşelim <span aria-hidden="true">↗</span></a>@if($phone)<a class="text-link" href="tel:{{ $dial }}">{{ $phone }}</a>@else<a class="text-link" href="#surec">Hizmeti keşfedin ↓</a>@endif</div>
+        <p class="hero-note">Yetkilendirilmiş veri erişimi. Mühendis değerlendirmesi.<br>İşletmenize uygun takip ve müdahale planı.</p>
     </div>
-    <div class="hero-visual" id="panel">
-        <div class="visual-label"><span>DAHA NET VERİ. DAHA DOĞRU AKSİYON.</span><span>01 / 03</span></div>
-        <div class="dashboard">
-            <div class="dashboard-head"><div><span class="mini-eyebrow">TESİSAT GÖRÜNÜMÜ</span><h2>Enerjiye yakından bakın.</h2></div><span class="dashboard-symbol" aria-hidden="true">↗</span></div>
-            <div class="facility"><div class="facility-icon" aria-hidden="true">▥</div><div><strong>Merkez üretim tesisi</strong><span>Reaktif enerji analizi</span></div><span class="demo-tag">ÖRNEK VERİ</span></div>
-            <div class="preview-periods" role="group" aria-label="Örnek analiz dönemi"><button type="button" data-period="hourly" aria-pressed="false">Saatlik</button><button type="button" data-period="daily" aria-pressed="true" class="active">Günlük</button><button type="button" data-period="monthly" aria-pressed="false">Aylık</button><span>Örnek görünüm</span></div>
-            <div class="ratio-grid" aria-live="polite"><div class="ratio-card"><div class="ratio-title">Endüktif oran <span aria-hidden="true">↗</span></div><div class="ratio-value" id="inductive-value">%18,4</div><div class="meter"><i id="inductive-bar" style="width:73.6%"></i><b style="left:80%"></b></div><div class="ratio-caption"><span id="inductive-status">Eşik içinde</span><span>Eşik %20</span></div></div><div class="ratio-card"><div class="ratio-title">Kapasitif oran <span aria-hidden="true">↗</span></div><div class="ratio-value" id="capacitive-value">%8,2</div><div class="meter"><i id="capacitive-bar" style="width:32.8%"></i><b style="left:60%"></b></div><div class="ratio-caption"><span id="capacitive-status">Eşik içinde</span><span>Eşik %15</span></div></div></div>
-            <div class="chart-head"><span>Endüktif oran değişimi</span><span><i></i> Ölçüm <b></b> Eşik</span></div>
-            <svg class="chart" viewBox="0 0 440 132" role="img" aria-label="Örnek endüktif oran grafiği; kesikli çizgi yüzde 20 eşiğini gösterir"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4f86b" stop-opacity=".25"/><stop offset="100%" stop-color="#d4f86b" stop-opacity="0"/></linearGradient></defs><path class="gridlines" d="M0 25H440M0 66H440M0 108H440"/><path d="M0 38H440" class="threshold"/><text x="411" y="29">%20</text><path id="chart-area" d="M0 94L44 83L88 89L132 65L176 78L220 60L264 72L308 52L352 62L396 44L440 49V132H0Z" fill="url(#chart-fill)"/><path id="chart-line" d="M0 94L44 83L88 89L132 65L176 78L220 60L264 72L308 52L352 62L396 44L440 49" class="trend"/></svg>
-            <div class="chart-axis"><span id="axis-start">00:00</span><span id="axis-middle">12:00</span><span id="axis-end">23:00</span></div>
-            <div class="dashboard-bottom"><span><i class="live-dot"></i> Son alınan ölçümle hesaplandı</span><span>İstanbul saati</span></div>
-        </div>
-        <div class="notification"><div class="notification-icon" aria-hidden="true">↗</div><div><strong>Takip sizden, hatırlatma bizden.</strong><p>Günlük veya haftalık durum raporunuz hazır.</p></div><span class="notification-check" aria-hidden="true">✓</span></div>
-        <p class="preview-note">Etkileşimli ürün önizlemesi · Gösterilen değerler örnektir.</p>
-    </div>
-</section>
-<section class="integration wrap" aria-label="Entegrasyon ve kullanım alanları"><div><span class="tiny-label">VERİ KAYNAĞI</span><strong>Başkent EDAŞ <span>MDM entegrasyonu</span></strong></div><p>Üretim tesisleri <span>✳</span> İşletmeler <span>✳</span> Teknik ekipler</p></section>
-<section class="benefits wrap section" id="ozellikler">
-    <div class="section-heading"><div><div class="eyebrow">DAHA AZ TABLO. DAHA FAZLA GÖRÜNÜRLÜK.</div><h2>Enerji verinizi anlayın.<br><span>İşinize odaklanın.</span></h2></div><p>Dağınık kayıtlar ve elle yapılan hesaplar yerine, neye bakmanız gerektiğini gösteren bir çalışma alanı.</p></div>
-    <div class="benefit-grid">
-        <article class="benefit-card large"><div class="card-top"><span class="feature-icon" aria-hidden="true">⌁</span><span class="card-index">01 / ANALİZ</span></div><h3>Rakamların arkasındaki<br>durumu görün.</h3><p>Saatlik, günlük ve aylık karşılaştırmalarla endüktif ve kapasitif oranlarınızı inceleyin. Eşik üzerindeki değerleri renkli vurgularla fark edin.</p><div class="analysis-mini"><div><span>ENDÜKTİF</span><strong>%22,6 <small>Eşik aşımı ↗</small></strong></div><div class="mini-track"><span></span><i></i></div><div class="mini-labels"><span>Örnek ölçüm</span><span>Eşik: %20</span></div></div></article>
-        <article class="benefit-card"><div class="card-top"><span class="feature-icon" aria-hidden="true">↗</span><span class="card-index">02 / BİLDİRİM</span></div><h3>Panele girmeden<br>takipte kalın.</h3><p>Tesisat bazında günlük veya haftalık e-posta ve Telegram raporları alın. İsterseniz sorun olmadığında da bilgi gelsin.</p><div class="channel-pills"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3 6 9 7 9-7"/></svg>E-posta</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-7-4 17-6-6-4 2 1-5 10-6-7 9"/></svg>Telegram</span></div></article>
-        <article class="benefit-card"><div class="card-top"><span class="feature-icon" aria-hidden="true">▦</span><span class="card-index">03 / YÖNETİM</span></div><h3>Birden fazla tesisat.<br>Tek bir bakış.</h3><p>Tesisatlar arasında kolayca geçiş yapın. Tarih aralığını seçin, geçmiş ölçümleri karşılaştırın ve analiz sonuçlarını CSV olarak indirin.</p><div class="site-list"><span><i></i> Merkez tesis <b>↗</b></span><span><i></i> İkinci tesis <b>↗</b></span></div></article>
+    <div class="report-scene" aria-label="Örnek günlük rapor görünümü">
+        <div class="scene-top"><span>TESİSİNİZDEN BİR GÜNLÜK BAKIŞ</span><span class="sample">Örnek rapor</span></div>
+        <article class="report-card">
+            <div class="report-heading"><div><p class="eyebrow">REAKTİFRADAR / GÜNLÜK ÖZET</p><h2>Üretim tesisi</h2></div><span class="report-icon" aria-hidden="true">↗</span></div>
+            <div class="report-status"><span class="dot"></span> Takip sürüyor <span>Son ölçüm · 18.00</span></div>
+            <div class="metrics"><div><p>Endüktif oran</p><strong>%22,6</strong><span class="metric-alert">↑ Eşik üzerinde</span></div><div><p>Kapasitif oran</p><strong>%8,2</strong><span class="metric-ok">✓ Eşik içinde</span></div></div>
+            <div class="chart-label"><span>Gün içindeki endüktif oran</span><span>Örnek ölçümler</span></div>
+            <svg class="chart" viewBox="0 0 420 120" role="img" aria-label="Örnek endüktif oranın gün sonunda eşik üzerine çıktığı grafik"><defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#bfe6c7" stop-opacity=".65"/><stop offset="1" stop-color="#bfe6c7" stop-opacity="0"/></linearGradient></defs><path d="M0 94L35 85L70 91L105 70L140 77L175 62L210 70L245 48L280 54L315 35L350 40L385 22L420 17V120H0Z" fill="url(#fill)"/><path d="M0 94L35 85L70 91L105 70L140 77L175 62L210 70L245 48L280 54L315 35L350 40L385 22L420 17" fill="none" stroke="#276952" stroke-width="3"/><path d="M0 38H420" stroke="#b55835" stroke-dasharray="5 5"/><text x="4" y="30" fill="#9d422a" font-size="12">İzleme eşiği</text></svg>
+            <div class="chart-axis"><span>00.00</span><span>09.00</span><span>18.00</span></div>
+            <div class="engineer-note"><span aria-hidden="true">!</span><div><strong>Ek uyarı · Endüktif oran yükseldi</strong><p>Kompanzasyon sisteminin kontrolü için mühendis değerlendirmesi ve müdahale planı.</p></div></div>
+        </article>
+        <div class="report-bottom"><span aria-hidden="true">↳</span><p><strong>Veriden anlaşılır aksiyona.</strong><br>Ne olduğunu ve sıradaki adımı birlikte görelim.</p></div>
+        <p class="sample-note">Görseldeki tesis, ölçümler ve değerlendirme örnektir.</p>
     </div>
 </section>
-<section class="workflow" id="nasil-calisir"><div class="wrap section"><div class="workflow-heading"><div><div class="eyebrow">KARMAŞIK KURULUMLARA GEREK YOK</div><h2>Üç adımda<br>radarınızı açın.</h2></div><a class="button light" href="{{ route('enerjisa.register') }}">İlk adımı at <span aria-hidden="true">↗</span></a></div><div class="steps-grid"><article><span class="step-number">01</span><h3>Çalışma alanınızı oluşturun.</h3><p>Firma bilgilerinizle hesabınızı açın. Tesisatlarınızı takip edeceğiniz size ait alana giriş yapın.</p></article><article><span class="step-number">02</span><h3>Enerji verinizi bağlayın.</h3><p>Başkent EDAŞ MDM erişim bilgilerinizi ekleyin ve yetkili olduğunuz tesisatları getirin.</p></article><article><span class="step-number">03</span><h3>Analiz edin, takipte kalın.</h3><p>Oranları inceleyin. Alıcı adresinizi ve bildirim sıklığını seçerek düzenli raporlarınızı yapılandırın.</p></article></div><div class="workflow-note"><span aria-hidden="true">↳</span> Başlamak için yetkili bir Başkent EDAŞ MDM servis hesabınız olmalıdır.</div></div></section>
-<section class="clarity wrap section"><div class="clarity-visual" aria-hidden="true"><div class="radar-orbit orbit-one"></div><div class="radar-orbit orbit-two"></div><div class="radar-orbit orbit-three"></div><div class="radar-cross horizontal"></div><div class="radar-cross vertical"></div><div class="radar-sweep"></div><div class="radar-center">R</div><div class="radar-point point-one"></div><div class="radar-point point-two"></div><div class="radar-caption"><span class="live-dot"></span> DAHA GÖRÜNÜR. DAHA YÖNETİLEBİLİR.</div></div><div class="clarity-copy"><div class="eyebrow">NEYİ BİLDİĞİNİZİ BİLİN</div><h2>Net sonuçlar.<br><span>Şeffaf hesaplama.</span></h2><p>Bir oran kadar, o oranın hangi ölçümlerden hesaplandığı da önemlidir. ReaktifRadar verinin sınırlarını görünür kılar.</p><ul><li><span>↗</span><div><strong>Son ölçüme kadar hesaplama</strong><p>Son gün için ertesi günün kaydını beklemeden, alınabilen son ölçümle analiz.</p></div></li><li><span>◷</span><div><strong>Eksik veri gizlenmez</strong><p>Kısmi dönemler ve hesaplanamayan değerler açıkça belirtilir.</p></div></li><li><span>↻</span><div><strong>Verinizin tarihini görün</strong><p>Eski ölçümlerde güncelleme hatırlatmasıyla kontrol sizde kalır.</p></div></li></ul></div></section>
-<section class="faq wrap section" id="sorular"><div><div class="eyebrow">AKLINIZDAKİLER</div><h2>Başlamadan<br>önce.</h2><p>ReaktifRadar hakkında<br>birkaç kısa cevap.</p></div><div class="faq-list"><details open><summary>Hangi tesisatları takip edebilirim?<span aria-hidden="true">+</span></summary><p>Mevcut entegrasyon Başkent EDAŞ MDM servisidir. Servis hesabınızın erişim yetkisi bulunan tesisatları takip edebilirsiniz. Servis erişimi ve gerekli IP izinleri veri sağlayıcı tarafından tanımlanmalıdır.</p></details><details><summary>Ek bir cihaz kurmam gerekiyor mu?<span aria-hidden="true">+</span></summary><p>ReaktifRadar için ek bir cihaz kurmanız gerekmez. Analizler, mevcut servis hesabınız üzerinden erişilebilen saatlik sayaç endekslerini kullanır.</p></details><details><summary>Bildirimleri nasıl alırım?<span aria-hidden="true">+</span></summary><p>Her tesisat için günlük veya haftalık sıklık seçebilirsiniz. E-posta adresinizi ekleyin ya da paneldeki bağlantı adımıyla Telegram'ı bağlayın. Sorun olmadığında da rapor gönderilmesini seçebilirsiniz.</p></details><details><summary>Veriler anlık mı güncelleniyor?<span aria-hidden="true">+</span></summary><p>Verinin güncelliği Başkent EDAŞ servisinin sunduğu kayıtlara bağlıdır. Son ölçüm zamanı panelde gösterilir. Bugünün verisi istenir; servis sunmuyorsa mevcut son ölçümler kullanılır. Dilediğinizde “Verileri yenile” ile yeniden sorgulayabilirsiniz.</p></details><details><summary>Panelde hangi eşikler kullanılıyor?<span aria-hidden="true">+</span></summary><p>Endüktif oran %20'nin, kapasitif oran %15'in üzerindeyse panel değeri vurgular. Oranlar, reaktif endeks farkının aktif endeks farkına bölünmesiyle hesaplanır. Bu gösterimler takip amaçlıdır; fatura veya ceza tutarı hesaplaması yapılmaz.</p></details></div></section>
-<section class="cta wrap"><div><div class="eyebrow">ENERJİNİZİ GÖRÜNÜR KILIN</div><h2>Bir sonraki ölçümde,<br>kontrol sizde olsun.</h2><p>Tesisatlarınızı bağlayın. Oranlarınızı görün. Takipte kalın.</p></div><a class="button dark" href="{{ route('enerjisa.register') }}">ReaktifRadar’a başla <span aria-hidden="true">↗</span></a><svg class="cta-rings" viewBox="0 0 400 400" aria-hidden="true"><circle cx="300" cy="220" r="95"/><circle cx="300" cy="220" r="150"/><circle cx="300" cy="220" r="205"/></svg></section>
+<div class="promise-bar"><div class="wrap"><span>01 <strong>Mühendis takibi</strong></span><span>02 <strong>Günlük raporlama</strong></span><span>03 <strong>Sorunlarda ek uyarı</strong></span><span>04 <strong>Müdahale planlaması</strong></span></div></div>
+<section id="hizmet" class="wrap section">
+    <div class="section-heading"><div><p class="eyebrow">BİR PANELDEN DAHA FAZLASI</p><h2>Takibin arkasında<br>bir mühendis var.</h2></div><p>Grafikleri tek başınıza yorumlamanız gerekmez. Ölçümleri anlamlandırıyor, dikkatinizi gerektiren durumları açıkça paylaşıyoruz.</p></div>
+    <div class="service-grid">
+        <article><span class="service-number">01 / TAKİP</span><h3>Tesisinize düzenli bakış</h3><p>Yetkilendirdiğiniz ölçüm verileri üzerinden endüktif ve kapasitif oranları takip eder, günlük değişimleri mühendisimizle değerlendiririz.</p><div class="card-foot">Ölçüm → İnceleme → Değerlendirme</div></article>
+        <article><span class="service-number">02 / BİLGİLENDİRME</span><h3>Her gün anlaşılır rapor</h3><p>Sorun olmasa da tesisinizin durumunu bilin. Günlük raporlarla mevcut tabloyu, eşik aşımlarında ise ek uyarıları e-posta ve Telegram üzerinden paylaşırız.</p><div class="card-foot">Günlük özet + Sorunlarda ek uyarı</div></article>
+        <article><span class="service-number">03 / MÜDAHALE</span><h3>Sorunda birlikte hareket</h3><p>Arıza veya uygunsuz değer tespitinde sizinle iletişime geçer, gerekli kontrol ve müdahaleyi hizmet kapsamınıza göre planlarız.</p><div class="card-foot">İletişim → Kontrol → Müdahale</div></article>
+    </div>
+</section>
+<section id="surec" class="workflow"><div class="wrap section">
+    <div class="section-heading"><div><p class="eyebrow">BAŞLAMAK İÇİN</p><h2>Önce tesisinizi tanıyalım.</h2></div><a class="button light" href="#iletisim">Beni arayın ↗</a></div>
+    <div class="steps"><article><span>1</span><h3>İhtiyacınızı konuşalım</h3><p>Tesisinizi, mevcut kompanzasyon yapınızı ve takip beklentinizi birlikte değerlendirelim.</p></article><article><span>2</span><h3>Erişimi birlikte tanımlayalım</h3><p>Gerekli veri erişim yetkisini sizin onayınızla oluşturalım; takip ve iletişim planını netleştirelim.</p></article><article><span>3</span><h3>Takibi başlatalım</h3><p>Günlük raporlarınızı sunalım. Sorunlarda ek uyarı ve mühendis değerlendirmesiyle sonraki adımı belirleyelim.</p></article></div>
+    <p class="workflow-note">Veri güncelliği ölçüm kaynağına bağlıdır. Eksik veya geciken ölçümleri raporda belirtiriz; eksik veriyi “sorun yok” olarak değerlendirmeyiz.</p>
+</div></section>
+<section class="wrap section faq" id="sorular"><div><p class="eyebrow">AKLINIZDAKİLER</p><h2>Net bilgi.<br>Birlikte belirlenen<br>hizmet kapsamı.</h2></div><div>
+    <details open><summary>Bu hizmet yalnızca bir yazılım mı?</summary><p>Hayır. Panel, takip hizmetimizin bir parçasıdır. Yetki verdiğiniz tesis verilerini mühendisimizle değerlendirir; raporlama, uyarı ve gerektiğinde müdahale sürecini birlikte yürütürüz.</p></details>
+    <details><summary>Sorun olmasa da rapor alacak mıyım?</summary><p>Evet. Günlük raporda mevcut durumu paylaşırız. Sorun tespit edildiğinde ek uyarı yaparız. İletişim kanallarını ve takip planını hizmet başlangıcında birlikte belirleriz.</p></details>
+    <details><summary>Arıza durumunda nasıl ilerliyoruz?</summary><p>Önce ölçümleri ve sorunun niteliğini değerlendirip sizinle iletişime geçeriz. Uzaktan kontrol veya yerinde müdahalenin kapsamı, süresi ve varsa ek bedeli tesisiniz için belirlenen hizmet koşullarına göre netleştirilir.</p></details>
+    <details><summary>Hizmet bedeli nasıl belirleniyor?</summary><p>Tesis sayısı, takip ihtiyacı ve müdahale kapsamına göre teklif hazırlıyoruz. İletişim bilgilerinizi bırakın; tesisinize uygun hizmeti görüşelim.</p></details>
+</div></section>
+<section id="iletisim" class="contact-section"><div class="wrap contact-grid">
+    <div><p class="eyebrow">TANIŞALIM</p><h2>Tesisinizin takibini<br>birlikte planlayalım.</h2><p class="contact-lead">Bizi arayın, e-posta gönderin veya numaranızı bırakın. İhtiyacınızı dinleyip size uygun hizmeti konuşalım.</p>
+        <div class="contact-links">@if($phone)<a href="tel:{{ $dial }}"><span>TELEFON</span><strong>{{ $phone }} ↗</strong></a>@endif @if($email)<a href="mailto:{{ $email }}"><span>E-POSTA</span><strong>{{ $email }} ↗</strong></a>@endif</div>
+        <p class="contact-note">İlk görüşmede veri erişimini, raporlama düzenini ve müdahale kapsamını netleştiriyoruz.</p>
+    </div>
+    <div class="callback-card"><h3>Sizi arayalım.</h3><p>Kısa bir tanışma, doğru bir başlangıç.</p>
+        @if(session('callback_success'))<div class="success" role="status">{{ session('callback_success') }}</div>@endif
+        @if($errors->any())<div class="errors" role="alert"><strong>Bilgilerinizi kontrol edin.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        <form action="{{ route('callback.store') }}" method="POST">@csrf
+            <label for="name">Adınız ve soyadınız</label><input id="name" name="name" autocomplete="name" maxlength="100" value="{{ old('name') }}" required>
+            <label for="phone">Telefon numaranız</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="05XX XXX XX XX" maxlength="30" value="{{ old('phone') }}" required>
+            <label for="company">İşletme adı <span>(isteğe bağlı)</span></label><input id="company" name="company" autocomplete="organization" maxlength="150" value="{{ old('company') }}">
+            <div class="honeypot" aria-hidden="true"><label for="website">Web sitesi</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+            <label class="consent"><input type="checkbox" name="contact_permission" value="1" required @checked(old('contact_permission'))><span>Hizmet talebim hakkında benimle iletişime geçilmesini kabul ediyorum.</span></label>
+            <p class="privacy-note">Bu formdaki bilgiler, talebinizi değerlendirmek ve sizinle iletişim kurmak için ReaktifRadar ekibine iletilir.</p>
+            <button class="button primary" type="submit">Beni arayın <span aria-hidden="true">↗</span></button>
+        </form>
+    </div>
+</div></section>
 </main>
-<footer class="wrap footer"><div class="footer-top"><a href="{{ url('/') }}" class="brand">Reaktif<span>Radar</span><span class="footer-dot" aria-hidden="true"></span></a><p>Enerjiyi anlayın. Kontrolü elinizde tutun.</p><a href="{{ route('enerjisa.login') }}">Panele giriş <span aria-hidden="true">↗</span></a></div><div class="footer-bottom"><span>© {{ date('Y') }} ReaktifRadar</span><span>Başkent EDAŞ / Enerjisa’dan bağımsız bir takip uygulamasıdır.</span><a href="#main">Yukarı dön ↑</a></div></footer>
-<script src="{{ asset('js/landing.js') }}" defer></script>
-</body>
-</html>
+<footer class="wrap footer"><a class="brand" href="{{ route('home') }}">Reaktif<span>Radar</span></a><p>Ölçümden müdahaleye, mühendislik takibi.</p><span>© {{ date('Y') }} ReaktifRadar</span></footer>
+</body></html>

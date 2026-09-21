@@ -1,11 +1,11 @@
 @extends('enerjisa.layout')
 @section('title', 'Erişim bilgileri')
 @section('content')
-<div class="heading"><div><div class="eyebrow">ENTEGRASYON</div><h1>Enerjisa erişim bilgileri</h1><p class="muted">Firmanızın Başkent EDAŞ MDM servis bağlantısını yönetin.</p></div></div>
-@if(config('enerjisa.debug'))<div class="notice">Enerjisa debug modu açık. Başarısız bağlantı testinin teknik ayrıntıları burada ve uygulama günlüğünde gösterilecek.</div>@endif
-<div class="two-col"><section class="card"><h2>Servis hesabı</h2><p class="muted">Enerjisa tarafından size iletilen erişim bilgilerini kullanın.</p>
+<div class="heading"><div><div class="eyebrow">ENTEGRASYON</div><h1>Ölçüm servisi erişim bilgileri</h1><p class="muted">Firmanızın ölçüm servisi bağlantısını yönetin.</p></div></div>
+@if(config('enerjisa.debug'))<div class="notice">Ölçüm servisi debug modu açık. Başarısız bağlantı testinin teknik ayrıntıları burada ve uygulama günlüğünde gösterilecek.</div>@endif
+<div class="two-col"><section class="card"><h2>Servis hesabı</h2><p class="muted">Ölçüm servisi tarafından size iletilen erişim bilgilerini kullanın.</p>
 <form method="post" action="{{ route('enerjisa.settings.save') }}" data-loading>@csrf @method('PUT')
-    <div class="field"><label for="region">Dağıtım bölgesi</label><input id="region" value="Başkent EDAŞ" readonly><div class="hint">Bu sürüm Başkent servis rehberine göre hazırlanmıştır.</div></div>
+    <div class="field"><label for="region">Veri kaynağı</label><input id="region" value="Ölçüm servisi" readonly><div class="hint">Yetkili olduğunuz ölçüm kaynağına bağlanılır.</div></div>
     <div class="field"><label for="client_id">MDM kullanıcı adı</label><input id="client_id" name="client_id" value="{{ old('client_id', $account->client_id) }}" required autocomplete="off" maxlength="255"></div>
     <div class="field"><label for="password">MDM parolası</label><input id="password" name="password" type="password" autocomplete="new-password" {{ $account->client_secret ? '' : 'required' }}><div class="hint">{{ $account->client_secret ? 'Parolanız kayıtlı. Değiştirmeyecekseniz boş bırakın.' : 'Erişim bilgileri veritabanında şifrelenerek saklanır.' }}</div></div>
     <button type="submit">Bilgileri kaydet</button>

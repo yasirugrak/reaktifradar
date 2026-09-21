@@ -3,7 +3,7 @@
 @section('content')
 <div class="heading"><div><div class="eyebrow">ENERJİ ÇALIŞMA ALANI</div><h1>Genel bakış</h1><p class="muted">Tesisatlarınız, bağlantınız ve son veri sorgularınız.</p></div><a class="button" href="{{ route('enerjisa.query') }}">Yeni sorgu →</a></div>
 @if(!$account->connected_at)
-<div class="card hero"><div><div class="eyebrow">BAĞLANTIYI TAMAMLAYIN</div><h2 style="font-size:22px;margin-top:10px">Verilerinize bağlanarak başlayın</h2><p class="muted">Enerjisa'nın ilettiği MDM kullanıcı adı ve parolasını ekleyin,<br>bağlantıyı test edin ve tesisatlarınızı getirin.</p></div><a class="button yellow" href="{{ route('enerjisa.settings') }}">Erişim bilgileri →</a></div>
+<div class="card hero"><div><div class="eyebrow">BAĞLANTIYI TAMAMLAYIN</div><h2 style="font-size:22px;margin-top:10px">Verilerinize bağlanarak başlayın</h2><p class="muted">Veri sağlayıcınızın ilettiği MDM kullanıcı adı ve parolasını ekleyin,<br>bağlantıyı test edin ve tesisatlarınızı getirin.</p></div><a class="button yellow" href="{{ route('enerjisa.settings') }}">Erişim bilgileri →</a></div>
 @endif
 <div class="grid">
     <div class="card"><div class="metric-label">KAYITLI TESİSAT</div><div class="metric">{{ $installationCount }}</div><span class="muted">Son başarılı tesisat listesinden</span></div>

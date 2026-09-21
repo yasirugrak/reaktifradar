@@ -23,7 +23,8 @@ class Sender
                 }
                 $response = Http::connectTimeout(10)->timeout(20)->withoutRedirecting()->post(
                     'https://api.telegram.org/bot'.$token.'/sendMessage',
-                    ['chat_id' => $rule->chat_id, 'text' => mb_substr($body, 0, 4000)],
+                    ['chat_id' => $rule->chat_id, 'text' => app(TelegramReport::class)->render($body, $emailData),
+                        'parse_mode' => 'HTML'],
                 );
                 if (! $response->successful() || $response->json('ok') !== true) {
                     throw new RuntimeException('Telegram rejected delivery');
@@ -34,7 +35,7 @@ class Sender
                 }
                 $mailer = app(MailManager::class)->mailer('smtp');
                 $report = $emailData ?? ['state' => 'legacy', 'installation' => $rule->installation];
-                $url = rtrim((string) config('app.url'), '/').'/enerjisa/reactive?'.http_build_query([
+                $url = rtrim((string) config('app.url'), '/').'/panel/reactive?'.http_build_query([
                     'installation' => $rule->installation, 'period' => 'daily',
                     'start' => $report['start'] ?? null, 'end' => $report['end'] ?? null,
                 ]);

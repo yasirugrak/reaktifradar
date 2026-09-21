@@ -59,10 +59,10 @@ class EnerjisaNotificationTest extends TestCase
     public function test_users_only_see_recipient_and_connect_button_not_technical_settings(): void
     {
         $member = $this->member();
-        $this->actingAs($member, 'enerjisa')->get('/enerjisa/notifications?installation=123')->assertOk()
+        $this->actingAs($member, 'enerjisa')->get('/panel/notifications?installation=123')->assertOk()
             ->assertSee('Telegram’ı bağla')->assertDontSee('name="smtp_host"', false)
             ->assertDontSee('name="telegram_token"', false)->assertDontSee('name="chat_id"', false);
-        $this->post('/enerjisa/notifications/settings', $this->settings())->assertNotFound();
+        $this->post('/panel/notifications/settings', $this->settings())->assertNotFound();
         $this->assertNull($member->account->fresh()->notification_settings);
     }
 
@@ -71,19 +71,19 @@ class EnerjisaNotificationTest extends TestCase
         $member = $this->member();
         $data = ['installation' => '123', 'enabled' => '1', 'frequency' => 'weekly', 'send_time' => '08:30',
             'weekday' => '1', 'send_healthy' => '1', 'email_enabled' => '1', 'telegram_enabled' => '0', 'email' => 'to@example.test'];
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/notifications', $data)->assertSessionHasNoErrors();
+        $this->actingAs($member, 'enerjisa')->post('/panel/notifications', $data)->assertSessionHasNoErrors();
         $this->assertDatabaseHas('enerjisa_notification_rules', ['account_id' => $member->account_id, 'frequency' => 'weekly']);
         $other = $this->member('other-notify@example.test');
-        $this->actingAs($other, 'enerjisa')->get('/enerjisa/notifications?installation=123')->assertViewHas('rule', null);
-        $this->post('/enerjisa/notifications', array_replace($data, ['installation' => '999']))->assertSessionHasErrors('installation');
-        $this->post('/enerjisa/notifications', array_replace($data, ['email_enabled' => '0']))->assertSessionHasErrors('channels');
+        $this->actingAs($other, 'enerjisa')->get('/panel/notifications?installation=123')->assertViewHas('rule', null);
+        $this->post('/panel/notifications', array_replace($data, ['installation' => '999']))->assertSessionHasErrors('installation');
+        $this->post('/panel/notifications', array_replace($data, ['email_enabled' => '0']))->assertSessionHasErrors('channels');
     }
 
     public function test_guest_cannot_access_or_change_notifications(): void
     {
-        $this->get('/enerjisa/notifications')->assertRedirect('/enerjisa/login');
-        $this->post('/enerjisa/notifications', [])->assertRedirect('/enerjisa/login');
-        $this->post('/enerjisa/notifications/telegram/connect', [])->assertRedirect('/enerjisa/login');
+        $this->get('/panel/notifications')->assertRedirect('/panel/login');
+        $this->post('/panel/notifications', [])->assertRedirect('/panel/login');
+        $this->post('/panel/notifications/telegram/connect', [])->assertRedirect('/panel/login');
     }
 
     public function test_dispatcher_honours_weekday_time_and_disabled_rules(): void
@@ -189,7 +189,7 @@ class EnerjisaNotificationTest extends TestCase
         $rule->account->update(['notification_settings' => $this->settings()]);
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
         app(Sender::class)->send($rule, 'telegram', 'Durum mesajı');
-        Http::assertSent(fn ($r) => $r['chat_id'] === '100123' && str_contains($r->url(), 'bot123:central-token/') && $r['text'] === 'Durum mesajı' && ! isset($r['parse_mode']));
+        Http::assertSent(fn ($r) => $r['chat_id'] === '100123' && str_contains($r->url(), 'bot123:central-token/') && str_contains($r['text'], 'Durum mesajı') && str_contains($r['text'], '<b>⚡ ReaktifRadar</b>') && $r['parse_mode'] === 'HTML');
         $mailer = Mockery::mock(Mailer::class);
         $manager = $this->mock(MailManager::class);
         config(['mail.mailers.smtp.host' => 'smtp.example.test', 'mail.from.address' => 'central@example.test', 'mail.from.name' => 'Merkezi Gönderici']);
@@ -222,25 +222,25 @@ class EnerjisaNotificationTest extends TestCase
     public function test_telegram_link_is_scoped_expiring_single_use_and_disconnectable(): void
     {
         $member = $this->member();
-        $response = $this->actingAs($member, 'enerjisa')->post('/enerjisa/notifications/telegram/connect', ['installation' => '123'])->assertRedirect();
+        $response = $this->actingAs($member, 'enerjisa')->post('/panel/notifications/telegram/connect', ['installation' => '123'])->assertRedirect();
         $url = $response->headers->get('Location');
         $this->assertStringStartsWith('https://t.me/example_bot?start=', $url);
         $token = substr($url, strpos($url, 'start=') + 6);
         $rule = NotificationRule::where('account_id', $member->account_id)->firstOrFail();
         $this->assertSame(hash('sha256', $token), $rule->telegram_link_hash);
-        $this->postJson('/enerjisa/telegram/webhook', $this->telegramStart($token))->assertForbidden();
+        $this->postJson('/panel/telegram/webhook', $this->telegramStart($token))->assertForbidden();
         $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('x', 32))
-            ->postJson('/enerjisa/telegram/webhook', $this->telegramStart($token))->assertOk()->assertJsonPath('method', 'sendMessage');
+            ->postJson('/panel/telegram/webhook', $this->telegramStart($token))->assertOk()->assertJsonPath('method', 'sendMessage');
         $this->assertSame('987654', $rule->fresh()->chat_id);
         $this->assertNotNull($rule->fresh()->telegram_connected_at);
-        $this->get('/enerjisa/notifications?installation=123')->assertOk()->assertSee('Telegram bağlı');
+        $this->get('/panel/notifications?installation=123')->assertOk()->assertSee('Telegram bağlı');
         $this->assertNull($rule->fresh()->telegram_link_hash);
-        $this->postJson('/enerjisa/telegram/webhook', $this->telegramStart($token, '111111'))->assertOk();
+        $this->postJson('/panel/telegram/webhook', $this->telegramStart($token, '111111'))->assertOk();
         $this->assertSame('987654', $rule->fresh()->chat_id);
         $other = $this->member('different@example.test');
-        $this->actingAs($other, 'enerjisa')->post('/enerjisa/notifications/telegram/disconnect', ['installation' => '123']);
+        $this->actingAs($other, 'enerjisa')->post('/panel/notifications/telegram/disconnect', ['installation' => '123']);
         $this->assertSame('987654', $rule->fresh()->chat_id);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/notifications/telegram/disconnect', ['installation' => '123'])->assertRedirect();
+        $this->actingAs($member, 'enerjisa')->post('/panel/notifications/telegram/disconnect', ['installation' => '123'])->assertRedirect();
         $this->assertNull($rule->fresh()->chat_id);
         $this->assertFalse($rule->fresh()->telegram_enabled);
     }
@@ -251,12 +251,12 @@ class EnerjisaNotificationTest extends TestCase
         $rule = $this->rule($member->account, ['chat_id' => null, 'telegram_connected_at' => null,
             'telegram_link_hash' => hash('sha256', str_repeat('a', 64)), 'telegram_link_expires_at' => now()->subMinute()]);
         $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('x', 32))
-            ->postJson('/enerjisa/telegram/webhook', $this->telegramStart(str_repeat('a', 64)))->assertOk();
+            ->postJson('/panel/telegram/webhook', $this->telegramStart(str_repeat('a', 64)))->assertOk();
         $this->assertNull($rule->fresh()->chat_id);
         $rule->update(['telegram_link_expires_at' => now()->addMinutes(15)]);
         $data = $this->telegramStart(str_repeat('a', 64));
         $data['message']['chat']['type'] = 'group';
-        $this->postJson('/enerjisa/telegram/webhook', $data)->assertOk();
+        $this->postJson('/panel/telegram/webhook', $data)->assertOk();
         $this->assertNull($rule->fresh()->chat_id);
     }
 
@@ -266,14 +266,14 @@ class EnerjisaNotificationTest extends TestCase
         $rule = $this->rule($member->account);
         $data = ['installation' => '123', 'enabled' => '1', 'frequency' => 'daily', 'send_time' => '09:00',
             'weekday' => '1', 'send_healthy' => '1', 'email_enabled' => '0', 'telegram_enabled' => '1', 'chat_id' => '999999'];
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/notifications', $data)->assertSessionHasNoErrors();
+        $this->actingAs($member, 'enerjisa')->post('/panel/notifications', $data)->assertSessionHasNoErrors();
         $this->assertSame('100123', $rule->fresh()->chat_id);
-        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('x', 32))->postJson('/enerjisa/telegram/webhook', [
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('x', 32))->postJson('/panel/telegram/webhook', [
             'message' => ['text' => '/stop', 'chat' => ['type' => 'private', 'id' => '100123'], 'from' => ['id' => '100123']],
         ])->assertOk();
         $this->assertFalse($rule->fresh()->telegram_enabled);
         $this->assertNull($rule->fresh()->chat_id);
-        $this->post('/enerjisa/notifications', $data)->assertSessionHasErrors('channels');
+        $this->post('/panel/notifications', $data)->assertSessionHasErrors('channels');
     }
 
     public function test_email_contains_designed_html_and_plain_text_alternative(): void

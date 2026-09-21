@@ -4,7 +4,7 @@
         'healthy' => ['color' => '#087f68', 'bg' => '#eaf7f1', 'tag' => 'NORMAL', 'title' => 'Değerleriniz sınırlar içinde.', 'description' => 'İncelenen günlük oranlarda eşik aşımı tespit edilmedi.'],
         'alert' => ['color' => '#b33c2e', 'bg' => '#fff0eb', 'tag' => 'EŞİK AŞIMI', 'title' => 'Kontrol gerektiren değerler var.', 'description' => 'Bazı günlük endüktif veya kapasitif oranlar belirlediğiniz sınırların üzerinde.'],
         'incomplete' => ['color' => '#946112', 'bg' => '#fff7e4', 'tag' => 'EKSİK VERİ', 'title' => 'Durum henüz doğrulanamadı.', 'description' => 'Eksik veya hesaplanamayan ölçümler nedeniyle tüm dönem için değerlendirme yapılamadı.'],
-        'unavailable' => ['color' => '#946112', 'bg' => '#fff7e4', 'tag' => 'BAĞLANTI SORUNU', 'title' => 'Güncel veriler alınamadı.', 'description' => 'Enerjisa bağlantısını kontrol edin. Bu rapor, değerlerin normal olduğunu doğrulamaz.'],
+        'unavailable' => ['color' => '#946112', 'bg' => '#fff7e4', 'tag' => 'BAĞLANTI SORUNU', 'title' => 'Güncel veriler alınamadı.', 'description' => 'Ölçüm servisi bağlantısını kontrol edin. Bu rapor, değerlerin normal olduğunu doğrulamaz.'],
         default => ['color' => '#137e86', 'bg' => '#edf6f7', 'tag' => 'DURUM RAPORU', 'title' => 'Tesisatınızın enerji özeti', 'description' => 'Kaydedilen raporun ayrıntılarını aşağıda inceleyebilirsiniz.'],
     };
 @endphp

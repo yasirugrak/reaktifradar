@@ -2,7 +2,7 @@
 @section('title', 'Sorgu sonucu')
 @section('content')
 @if($owner)<section class="card"><div class="eyebrow">TESİSAT SAHİBİ</div><h2 style="margin-top:8px">{{ $owner }}</h2></section>@endif
-<div class="heading"><div><div class="eyebrow">SORGU #{{ $query->id }}</div><h1>{{ $query->label() }}</h1><p class="muted">{{ $query->created_at->format('d.m.Y H:i:s') }} · Başkent EDAŞ</p></div><div class="actions">
+<div class="heading"><div><div class="eyebrow">SORGU #{{ $query->id }}</div><h1>{{ $query->label() }}</h1><p class="muted">{{ $query->created_at->format('d.m.Y H:i:s') }} · Ölçüm servisi</p></div><div class="actions">
 @if($query->kind === '1' && isset($query->parameters['installationNumber']))<a class="button secondary" href="{{ route('enerjisa.reactive', $analysisFilters) }}">Reaktif analiz →</a>@endif
 @if($query->payload !== null && $query->error === null)
 @if($rows->total() > 0)<a class="button" href="{{ route('enerjisa.result.download', ['id' => $query->id, 'format' => 'csv']) }}">CSV indir</a>@endif

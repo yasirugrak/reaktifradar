@@ -51,7 +51,7 @@ docker compose up -d app
 docker compose exec app php artisan optimize
 ```
 
-HTTPS üzerinden `/enerjisa/login` ve `/panel/login` çalışmalı; bağlantılarda `reaktifradar.com` görünmeli.
+HTTPS üzerinden `/panel/login` ve `/admin/login` çalışmalı; bağlantılarda `reaktifradar.com` görünmeli.
 
 ## 4. Telegram ve bildirimlerin açılması
 

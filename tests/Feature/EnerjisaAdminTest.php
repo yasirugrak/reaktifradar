@@ -66,20 +66,20 @@ class EnerjisaAdminTest extends TestCase
     {
         $account = Account::create(['name' => 'Firma', 'is_active' => false]);
         $member = Member::create(['account_id' => $account->id, 'name' => 'User', 'email' => 'suspended@example.test', 'password' => 'Test123']);
-        $this->post('/enerjisa/login', ['email' => $member->email, 'password' => 'Test123'])->assertSessionHasErrors('email');
-        $this->actingAs($member, 'enerjisa')->get('/enerjisa')->assertRedirect('/enerjisa/login');
+        $this->post('/panel/login', ['email' => $member->email, 'password' => 'Test123'])->assertSessionHasErrors('email');
+        $this->actingAs($member, 'enerjisa')->get('/panel')->assertRedirect('/panel/login');
         $account->update(['is_active' => true]);
         $member->update(['is_active' => false]);
-        $this->post('/enerjisa/login', ['email' => $member->email, 'password' => 'Test123'])->assertSessionHasErrors('email');
+        $this->post('/panel/login', ['email' => $member->email, 'password' => 'Test123'])->assertSessionHasErrors('email');
     }
 
     public function test_password_change_ends_existing_session_and_suspended_company_sends_nothing(): void
     {
         $account = Account::create(['name' => 'Firma']);
         $member = Member::create(['account_id' => $account->id, 'name' => 'User', 'email' => 'session@example.test', 'password' => 'Test123']);
-        $this->actingAs($member, 'enerjisa')->get('/enerjisa')->assertOk();
+        $this->actingAs($member, 'enerjisa')->get('/panel')->assertOk();
         $member->update(['password' => 'Changed123']);
-        $this->get('/enerjisa')->assertRedirect('/enerjisa/login');
+        $this->get('/panel')->assertRedirect('/panel/login');
         $account->update(['is_active' => false]);
         NotificationRule::create(['account_id' => $account->id, 'installation' => '123', 'enabled' => true, 'send_time' => '00:00', 'email_enabled' => true, 'email' => 'recipient@example.test']);
         Http::preventStrayRequests();
@@ -102,7 +102,7 @@ class EnerjisaAdminTest extends TestCase
         $this->assertTrue(app(TelegramSettings::class)->ready());
         $this->assertSame($admin->id, SystemSetting::find('telegram')->updated_by);
         $this->assertStringNotContainsString('super_secret_token', DB::table('enerjisa_system_settings')->where('key', 'telegram')->value('value'));
-        Http::assertSent(fn ($r) => str_contains($r->url(), 'setWebhook') && $r['url'] === 'https://example.test/enerjisa/telegram/webhook' && strlen($r['secret_token']) >= 32);
+        Http::assertSent(fn ($r) => str_contains($r->url(), 'setWebhook') && $r['url'] === 'https://example.test/panel/telegram/webhook' && strlen($r['secret_token']) >= 32);
     }
 
     public function test_failed_telegram_setup_preserves_current_settings(): void

@@ -46,20 +46,20 @@ class EnerjisaPanelTest extends TestCase
 
     public function test_guests_and_existing_panel_users_cannot_access_energy_accounts(): void
     {
-        foreach (['/enerjisa', '/enerjisa/settings', '/enerjisa/installations', '/enerjisa/query', '/enerjisa/results/1'] as $path) {
-            $this->get($path)->assertRedirect('/enerjisa/login');
+        foreach (['/panel', '/panel/settings', '/panel/installations', '/panel/query', '/panel/results/1'] as $path) {
+            $this->get($path)->assertRedirect('/panel/login');
         }
-        $this->actingAs(User::factory()->create(), 'web')->get('/enerjisa')->assertRedirect('/enerjisa/login');
-        $this->get('/enerjisa/login')->assertOk()->assertSee('Panel parolası');
-        $this->get('/enerjisa/register')->assertOk();
+        $this->actingAs(User::factory()->create(), 'web')->get('/panel')->assertRedirect('/panel/login');
+        $this->get('/panel/login')->assertOk()->assertSee('Panel parolası');
+        $this->get('/panel/register')->assertOk();
     }
 
     public function test_registration_creates_isolated_account_and_logs_in(): void
     {
-        $this->post('/enerjisa/register', [
+        $this->post('/panel/register', [
             'company' => 'Yeni Firma', 'name' => 'Ada', 'email' => 'ADA@example.test',
             'password' => 'Password12345', 'password_confirmation' => 'Password12345',
-        ])->assertRedirect('/enerjisa/settings');
+        ])->assertRedirect('/panel/settings');
         $member = Member::firstOrFail();
         $this->assertAuthenticatedAs($member, 'enerjisa');
         $this->assertGuest('web');
@@ -71,29 +71,29 @@ class EnerjisaPanelTest extends TestCase
     public function test_login_logout_and_all_panel_pages(): void
     {
         $this->member();
-        $this->post('/enerjisa/login', ['email' => 'owner@example.test', 'password' => 'incorrect'])->assertSessionHasErrors('email');
-        $this->post('/enerjisa/login', ['email' => 'OWNER@example.test', 'password' => 'Password12345'])->assertRedirect('/enerjisa');
-        foreach (['/enerjisa', '/enerjisa/settings', '/enerjisa/installations', '/enerjisa/query'] as $path) {
+        $this->post('/panel/login', ['email' => 'owner@example.test', 'password' => 'incorrect'])->assertSessionHasErrors('email');
+        $this->post('/panel/login', ['email' => 'OWNER@example.test', 'password' => 'Password12345'])->assertRedirect('/panel');
+        foreach (['/panel', '/panel/settings', '/panel/installations', '/panel/query'] as $path) {
             $this->get($path)->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         }
-        $this->post('/enerjisa/logout')->assertRedirect('/enerjisa/login');
+        $this->post('/panel/logout')->assertRedirect('/panel/login');
         $this->assertGuest('enerjisa');
     }
 
     public function test_credentials_are_encrypted_and_blank_password_keeps_existing_secret(): void
     {
         $member = $this->member();
-        $this->actingAs($member, 'enerjisa')->put('/enerjisa/settings', ['client_id' => 'new-user', 'password' => 'secret-value'])
+        $this->actingAs($member, 'enerjisa')->put('/panel/settings', ['client_id' => 'new-user', 'password' => 'secret-value'])
             ->assertSessionHasNoErrors();
         $account = $member->account->fresh();
         $this->assertSame('secret-value', $account->client_secret);
         $this->assertNotSame('secret-value', DB::table('enerjisa_accounts')->value('client_secret'));
         $this->assertArrayNotHasKey('client_secret', $account->toArray());
-        $this->get('/enerjisa/settings')->assertDontSee('secret-value');
-        $this->put('/enerjisa/settings', ['client_id' => 'new-user', 'password' => ''])->assertSessionHasNoErrors();
+        $this->get('/panel/settings')->assertDontSee('secret-value');
+        $this->put('/panel/settings', ['client_id' => 'new-user', 'password' => ''])->assertSessionHasNoErrors();
         $this->assertSame('secret-value', $account->fresh()->client_secret);
-        $this->put('/enerjisa/settings', ['client_id' => 'other-user', 'password' => ''])->assertSessionHasErrors('password');
-        $this->put('/enerjisa/settings', ['client_id' => '', 'password' => 'must-not-flash'])->assertSessionHasErrors();
+        $this->put('/panel/settings', ['client_id' => 'other-user', 'password' => ''])->assertSessionHasErrors('password');
+        $this->put('/panel/settings', ['client_id' => '', 'password' => 'must-not-flash'])->assertSessionHasErrors();
         $this->assertNull(session('_old_input.password'));
     }
 
@@ -102,16 +102,16 @@ class EnerjisaPanelTest extends TestCase
         $owner = $this->member('one@example.test');
         $other = $this->member('two@example.test');
         $query = $other->account->queries()->create(['kind' => 'installations', 'parameters' => [], 'payload' => [['installationNumber' => '999999']]]);
-        $this->actingAs($owner, 'enerjisa')->get('/enerjisa/results/'.$query->id)->assertNotFound();
-        $this->get('/enerjisa/installations')->assertDontSee('999999');
-        $this->get('/enerjisa')->assertDontSee('/enerjisa/results/'.$query->id, false);
+        $this->actingAs($owner, 'enerjisa')->get('/panel/results/'.$query->id)->assertNotFound();
+        $this->get('/panel/installations')->assertDontSee('999999');
+        $this->get('/panel')->assertDontSee('/panel/results/'.$query->id, false);
     }
 
     public function test_connection_test_uses_documented_post_query_and_does_not_store_token(): void
     {
         $member = $this->member();
         $this->fakeApi([]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/connection')->assertSessionHasNoErrors();
+        $this->actingAs($member, 'enerjisa')->post('/panel/connection')->assertSessionHasNoErrors();
         Http::assertSent(function ($request) {
             parse_str(parse_url($request->url(), PHP_URL_QUERY) ?? '', $query);
 
@@ -129,10 +129,10 @@ class EnerjisaPanelTest extends TestCase
     {
         $member = $this->member();
         $this->fakeApi(['Status' => 0, 'installationList' => [['installationNumber' => '001234', 'customerName' => '<script>alert(1)</script>']]]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/installations')->assertRedirect();
+        $this->actingAs($member, 'enerjisa')->post('/panel/installations')->assertRedirect();
         $query = $member->account->queries()->firstOrFail();
-        $this->get('/enerjisa/results/'.$query->id)->assertOk()->assertSee('001234')->assertDontSee('<script>alert(1)</script>', false);
-        $this->get('/enerjisa/installations')->assertOk()->assertSee('001234');
+        $this->get('/panel/results/'.$query->id)->assertOk()->assertSee('001234')->assertDontSee('<script>alert(1)</script>', false);
+        $this->get('/panel/installations')->assertOk()->assertSee('001234');
         Http::assertSent(fn ($request) => str_contains($request->url(), 'installation-list') && $request->hasHeader('consumerID', 'MDM') && $request['consumerID'] === 'MDMAYPRD');
     }
 
@@ -149,10 +149,10 @@ class EnerjisaPanelTest extends TestCase
         ];
         $query = $member->account->queries()->create(['kind' => 'installations', 'parameters' => [], 'payload' => $payload]);
         $this->actingAs($member, 'enerjisa');
-        $this->get('/enerjisa/results/'.$query->id)->assertOk()->assertSee('2 görüntülenebilir kayıt alındı.')->assertSee('001234')->assertSee('009876');
-        $this->get('/enerjisa/installations')->assertOk()->assertSee('2 tesisat')->assertSee('Test Tesisatı A')->assertSee('Test Tesisatı B');
-        $this->get('/enerjisa/query')->assertOk()->assertSee('value="001234"', false)->assertSee('value="009876"', false);
-        $this->get('/enerjisa')->assertOk()->assertViewHas('installationCount', 2);
+        $this->get('/panel/results/'.$query->id)->assertOk()->assertSee('2 görüntülenebilir kayıt alındı.')->assertSee('001234')->assertSee('009876');
+        $this->get('/panel/installations')->assertOk()->assertSee('2 tesisat')->assertSee('Test Tesisatı A')->assertSee('Test Tesisatı B');
+        $this->get('/panel/query')->assertOk()->assertSee('value="001234"', false)->assertSee('value="009876"', false);
+        $this->get('/panel')->assertOk()->assertViewHas('installationCount', 2);
         $this->assertSame($payload, $query->fresh()->payload);
         Http::assertNothingSent();
     }
@@ -164,24 +164,24 @@ class EnerjisaPanelTest extends TestCase
             '*/oauth/token*' => Http::sequence()->push(['access_token' => 'token-one'])->push(['access_token' => 'token-two']),
             '*/customer/*' => Http::sequence()->push([], 401)->push(['Status' => 0, 'valueList' => [['meterDate' => '2026-08-01 00:00:00', 'activeConsumption' => 8.8125, 'activeGeneration' => 0]]]),
         ]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/query', ['kind' => 'hourly', 'installation' => '00123', 'month' => '2026-08', 'from_date' => '2026-08-01T00:00'])->assertSessionHasNoErrors();
+        $this->actingAs($member, 'enerjisa')->post('/panel/query', ['kind' => 'hourly', 'installation' => '00123', 'month' => '2026-08', 'from_date' => '2026-08-01T00:00'])->assertSessionHasNoErrors();
         Http::assertSent(fn ($request) => str_contains($request->url(), 'hourly-meter-information-multi-installation')
             && $request['installationNumbers'] === '00123' && $request['meterMonth'] === '2026-08'
             && $request['fromDate'] === '2026-08-01 00:00:00' && $request['access_token'] === 'token-two');
         Http::assertSentCount(4);
         $query = $member->account->queries()->firstOrFail();
-        $this->get('/enerjisa/results/'.$query->id)->assertOk()->assertSee('8.8125');
+        $this->get('/panel/results/'.$query->id)->assertOk()->assertSee('8.8125');
     }
 
     public function test_hourly_indices_accept_today_and_send_current_time(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-09-21 14:15:00', 'Europe/Istanbul'));
         Http::fake(['*oauth/token*' => Http::response(['access_token' => 'fake-token']), '*energy-value*' => Http::response([])]);
-        $this->actingAs($this->member(), 'enerjisa')->post('/enerjisa/query', [
+        $this->actingAs($this->member(), 'enerjisa')->post('/panel/query', [
             'kind' => '1', 'installation' => '123', 'start' => '2026-09-01', 'end' => '2026-09-21',
         ])->assertSessionHasNoErrors();
         Http::assertSent(fn ($r) => str_contains($r->url(), 'energy-value') && $r['endDate'] === '21/09/2026 14:15:00');
-        $this->post('/enerjisa/query', [
+        $this->post('/panel/query', [
             'kind' => '1', 'installation' => '123', 'start' => '2026-09-01', 'end' => '2026-09-22',
         ])->assertSessionHasErrors('end');
     }
@@ -189,7 +189,7 @@ class EnerjisaPanelTest extends TestCase
     public function test_hourly_query_defaults_delta_to_selected_month_start(): void
     {
         $this->fakeApi(['status' => 0, 'valueList' => []]);
-        $this->actingAs($this->member(), 'enerjisa')->post('/enerjisa/query', [
+        $this->actingAs($this->member(), 'enerjisa')->post('/panel/query', [
             'kind' => 'hourly', 'installation' => '00123', 'month' => '2026-08',
         ])->assertSessionHasNoErrors();
         Http::assertSent(fn ($request) => str_contains($request->url(), 'hourly-meter-information-multi-installation')
@@ -217,7 +217,7 @@ class EnerjisaPanelTest extends TestCase
             '*/oauth/token*' => Http::response(['access_token' => 'test-token']),
             '*/customer/*' => Http::response($body, 200, ['Content-Type' => $contentType]),
         ]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/query', [
+        $this->actingAs($member, 'enerjisa')->post('/panel/query', [
             'kind' => 'hourly', 'installation' => '00123', 'month' => '2026-08',
         ])->assertRedirect()->assertSessionHas('enerjisa_diagnostics.response_kind', $kind)
             ->assertSessionHas('enerjisa_diagnostics.response_bytes', strlen($body));
@@ -227,7 +227,7 @@ class EnerjisaPanelTest extends TestCase
         $details = session('enerjisa_diagnostics');
         $this->assertStringNotContainsString('mdm-secret', json_encode($details));
         $this->assertStringNotContainsString('test-token', json_encode($details));
-        $this->get('/enerjisa/results/'.$query->id)->assertOk()->assertSee($message)->assertDontSee('mdm-secret')->assertDontSee('test-token');
+        $this->get('/panel/results/'.$query->id)->assertOk()->assertSee($message)->assertDontSee('mdm-secret')->assertDontSee('test-token');
         Log::shouldHaveReceived('warning')->once()->with('Enerjisa MDM diagnostic', $details);
     }
 
@@ -235,7 +235,7 @@ class EnerjisaPanelTest extends TestCase
     {
         $member = $this->member();
         $this->fakeApi(['Status' => 0, 'values' => [['meter_date' => '01/08/2026 00:00:00', 't_top_kWh' => '623,858.625']]]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/query', ['kind' => '2', 'installation' => '00123', 'start' => '2026-08-01', 'end' => '2026-08-31'])->assertSessionHasNoErrors();
+        $this->actingAs($member, 'enerjisa')->post('/panel/query', ['kind' => '2', 'installation' => '00123', 'start' => '2026-08-01', 'end' => '2026-08-31'])->assertSessionHasNoErrors();
         Http::assertSent(fn ($request) => str_contains($request->url(), 'energy-value') && $request['startDate'] === '01/08/2026 00:00:00' && $request['endDate'] === '31/08/2026 23:59:59' && (string) $request['dataType'] === '2');
     }
 
@@ -255,7 +255,7 @@ class EnerjisaPanelTest extends TestCase
     #[DataProvider('invalidRanges')]
     public function test_invalid_ranges_never_call_the_api(array $data): void
     {
-        $this->actingAs($this->member(), 'enerjisa')->post('/enerjisa/query', $data + ['installation' => '123'])->assertSessionHasErrors();
+        $this->actingAs($this->member(), 'enerjisa')->post('/panel/query', $data + ['installation' => '123'])->assertSessionHasErrors();
         Http::assertNothingSent();
         $this->assertDatabaseCount('enerjisa_queries', 0);
     }
@@ -264,11 +264,11 @@ class EnerjisaPanelTest extends TestCase
     {
         $member = $this->member();
         $this->fakeApi(['Status' => [['Message_type' => '1', 'Message_text' => 'sensitive provider message mdm-secret']]]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/installations');
+        $this->actingAs($member, 'enerjisa')->post('/panel/installations');
         $query = $member->account->queries()->firstOrFail();
         $this->assertNotNull($query->error);
         $this->assertNull($query->payload);
-        $this->get('/enerjisa/results/'.$query->id)->assertSee('yetkiniz bulunmuyor')->assertDontSee('mdm-secret');
+        $this->get('/panel/results/'.$query->id)->assertSee('yetkiniz bulunmuyor')->assertDontSee('mdm-secret');
     }
 
     public function test_sensitive_response_fields_are_removed_before_storage(): void
@@ -290,13 +290,13 @@ class EnerjisaPanelTest extends TestCase
             ['errno' => 28, 'total_time' => 10.01, 'error' => 'private-value', 'url' => 'private-value'],
         );
         Http::fake(fn () => throw new ConnectionException('cURL error 28 private-value', 0, $previous));
-        $this->actingAs($this->member(), 'enerjisa')->from('/enerjisa/settings')->post('/enerjisa/connection')
+        $this->actingAs($this->member(), 'enerjisa')->from('/panel/settings')->post('/panel/connection')
             ->assertSessionHasErrors('connection')->assertSessionHas('enerjisa_diagnostics.curl_errno', 28);
         $details = session('enerjisa_diagnostics');
         $this->assertSame('Zaman aşımı', $details['category']);
         $this->assertSame(10.01, $details['total_time']);
         $this->assertStringNotContainsString('private-value', json_encode($details));
-        $this->get('/enerjisa/settings')->assertSee('Enerjisa bağlantı tanısı')->assertSee('Zaman aşımı')->assertDontSee('private-value');
+        $this->get('/panel/settings')->assertSee('Ölçüm servisi bağlantı tanısı')->assertSee('Zaman aşımı')->assertDontSee('private-value');
         Log::shouldHaveReceived('warning')->once()->with('Enerjisa MDM diagnostic', $details);
     }
 
@@ -338,7 +338,7 @@ class EnerjisaPanelTest extends TestCase
         $records[124]['extraColumn'] = 'Son kayıt';
         $query = $member->account->queries()->create(['kind' => 'hourly', 'parameters' => [], 'payload' => ['valueList' => $records]]);
         $this->actingAs($member, 'enerjisa');
-        $response = $this->get('/enerjisa/results/'.$query->id.'/download/csv?page=2')
+        $response = $this->get('/panel/results/'.$query->id.'/download/csv?page=2')
             ->assertOk()->assertDownload('enerjisa-sorgu-'.$query->id.'.csv')
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->assertHeader('Cache-Control', 'no-store, private');
         $csv = $response->streamedContent();
@@ -358,7 +358,7 @@ class EnerjisaPanelTest extends TestCase
             'untrusted' => '=1+1', 'spaced' => '  @SUM(1)', 'reading' => -12.5, 'enabled' => false,
         ]]]]);
         $this->actingAs($member, 'enerjisa');
-        $csv = $this->get('/enerjisa/results/'.$query->id.'/download/csv')->assertOk()->streamedContent();
+        $csv = $this->get('/panel/results/'.$query->id.'/download/csv')->assertOk()->streamedContent();
         $lines = explode("\r\n", substr($csv, 3));
         $values = str_getcsv($lines[1], ';', '"', '');
         $this->assertSame(['001234', 'Çınar; "Tesis"', "'=1+1", "'  @SUM(1)", '-12.5', 'false'], $values);
@@ -370,10 +370,10 @@ class EnerjisaPanelTest extends TestCase
         $payload = ['status' => 0, 'unknownStructure' => ['text' => 'Türkçe', 'values' => [0, null, false]]];
         $query = $member->account->queries()->create(['kind' => 'hourly', 'parameters' => [], 'payload' => $payload]);
         $this->actingAs($member, 'enerjisa');
-        $response = $this->get('/enerjisa/results/'.$query->id.'/download/json')->assertOk()->assertDownload('enerjisa-sorgu-'.$query->id.'.json');
+        $response = $this->get('/panel/results/'.$query->id.'/download/json')->assertOk()->assertDownload('enerjisa-sorgu-'.$query->id.'.json');
         $this->assertSame($payload, json_decode($response->streamedContent(), true));
-        $this->get('/enerjisa/results/'.$query->id)->assertSee('JSON indir')->assertDontSee('CSV indir');
-        $this->get('/enerjisa/results/'.$query->id.'/download/csv')->assertNotFound();
+        $this->get('/panel/results/'.$query->id)->assertSee('JSON indir')->assertDontSee('CSV indir');
+        $this->get('/panel/results/'.$query->id.'/download/csv')->assertNotFound();
         Http::assertNothingSent();
     }
 
@@ -383,15 +383,15 @@ class EnerjisaPanelTest extends TestCase
         $other = $this->member('download-other@example.test');
         $query = $owner->account->queries()->create(['kind' => 'installations', 'parameters' => [], 'payload' => [['instalationNumber' => '00123']]]);
         foreach (['csv', 'json'] as $format) {
-            $this->get('/enerjisa/results/'.$query->id.'/download/'.$format)->assertRedirect('/enerjisa/login');
+            $this->get('/panel/results/'.$query->id.'/download/'.$format)->assertRedirect('/panel/login');
         }
         $this->actingAs($other, 'enerjisa');
         foreach (['csv', 'json'] as $format) {
-            $this->get('/enerjisa/results/'.$query->id.'/download/'.$format)->assertNotFound();
+            $this->get('/panel/results/'.$query->id.'/download/'.$format)->assertNotFound();
         }
         $this->actingAs($owner, 'enerjisa');
-        $this->get('/enerjisa/results/'.$query->id.'/download/xml')->assertNotFound();
-        $this->get('/enerjisa/results/'.$query->id)->assertSee('CSV indir')->assertSee('JSON indir');
+        $this->get('/panel/results/'.$query->id.'/download/xml')->assertNotFound();
+        $this->get('/panel/results/'.$query->id)->assertSee('CSV indir')->assertSee('JSON indir');
     }
 
     public function test_failed_and_pending_queries_cannot_be_downloaded(): void
@@ -401,9 +401,9 @@ class EnerjisaPanelTest extends TestCase
         foreach ([null, 'Servis hatası'] as $error) {
             $query = $member->account->queries()->create(['kind' => 'hourly', 'parameters' => [], 'error' => $error]);
             foreach (['csv', 'json'] as $format) {
-                $this->get('/enerjisa/results/'.$query->id.'/download/'.$format)->assertNotFound();
+                $this->get('/panel/results/'.$query->id.'/download/'.$format)->assertNotFound();
             }
-            $this->get('/enerjisa/results/'.$query->id)->assertDontSee('CSV indir')->assertDontSee('JSON indir');
+            $this->get('/panel/results/'.$query->id)->assertDontSee('CSV indir')->assertDontSee('JSON indir');
         }
     }
 

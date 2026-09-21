@@ -42,10 +42,10 @@ class EnerjisaReactiveTest extends TestCase
         $member = $this->member();
         $this->snapshot($member->account);
         $this->actingAs($member, 'enerjisa');
-        $this->get('/enerjisa/reactive?installation=123&period=hourly&start=2026-08-01&end=2026-08-01')
+        $this->get('/panel/reactive?installation=123&period=hourly&start=2026-08-01&end=2026-08-01')
             ->assertOk()->assertSee('%21,000')->assertSee('%16,000')->assertSee('Eşik aşımı')
             ->assertViewHas('summary', fn ($summary) => $summary['total'] === 24 && $summary['alerts'] === 1);
-        $this->get('/enerjisa/reactive?installation=123&period=daily&start=2026-08-01&end=2026-08-01')
+        $this->get('/panel/reactive?installation=123&period=daily&start=2026-08-01&end=2026-08-01')
             ->assertOk()->assertSee('%20,000')->assertSee('%15,000')->assertSee('Eşikler içinde');
         Http::assertNothingSent();
     }
@@ -57,11 +57,11 @@ class EnerjisaReactiveTest extends TestCase
         $this->snapshot($other->account, 'secret-other-meter');
         $this->snapshot($member->account, '001');
         $this->snapshot($member->account, '002');
-        $this->actingAs($member, 'enerjisa')->get('/enerjisa/reactive?installation=123&period=daily&start=2026-08-01&end=2026-08-01&meter=002')
+        $this->actingAs($member, 'enerjisa')->get('/panel/reactive?installation=123&period=daily&start=2026-08-01&end=2026-08-01&meter=002')
             ->assertOk()->assertDontSee('secret-other-meter')
             ->assertViewHas('meters', fn ($meters) => count($meters) === 2)
             ->assertViewHas('rows', fn ($rows) => $rows[0]['first']->meter === '002' && $rows[0]['activeDelta'] === '200.000000000');
-        $this->get('/enerjisa/reactive?installation=999')->assertOk()->assertSee('saatlik endeks kaydı yok');
+        $this->get('/panel/reactive?installation=999')->assertOk()->assertSee('saatlik endeks kaydı yok');
     }
 
     public function test_latest_snapshot_replaces_duplicates_and_other_query_kinds_are_not_used(): void
@@ -80,11 +80,11 @@ class EnerjisaReactiveTest extends TestCase
 
     public function test_empty_state_guests_and_invalid_date_filters(): void
     {
-        $this->get('/enerjisa/reactive')->assertRedirect('/enerjisa/login');
-        $this->get('/enerjisa/reactive/download')->assertRedirect('/enerjisa/login');
-        $this->actingAs($this->member(), 'enerjisa')->get('/enerjisa/reactive')->assertOk()->assertSee('saatlik endeks kaydı yok');
-        $this->get('/enerjisa/reactive?period=hourly&start=2026-01-01&end=2026-08-01')->assertSessionHasErrors('end');
-        $this->get('/enerjisa/reactive?start=2026-09-01&end=2026-08-01')->assertSessionHasErrors('end');
+        $this->get('/panel/reactive')->assertRedirect('/panel/login');
+        $this->get('/panel/reactive/download')->assertRedirect('/panel/login');
+        $this->actingAs($this->member(), 'enerjisa')->get('/panel/reactive')->assertOk()->assertSee('saatlik endeks kaydı yok');
+        $this->get('/panel/reactive?period=hourly&start=2026-01-01&end=2026-08-01')->assertSessionHasErrors('end');
+        $this->get('/panel/reactive?start=2026-09-01&end=2026-08-01')->assertSessionHasErrors('end');
     }
 
     public function test_alert_filter_and_csv_export_are_consistent(): void
@@ -93,8 +93,8 @@ class EnerjisaReactiveTest extends TestCase
         $this->snapshot($member->account);
         $this->actingAs($member, 'enerjisa');
         $parameters = '?installation=123&period=hourly&start=2026-08-01&end=2026-08-01&status=alert';
-        $this->get('/enerjisa/reactive'.$parameters)->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 1);
-        $response = $this->get('/enerjisa/reactive/download'.$parameters)->assertOk()->assertDownload('enerjisa-reaktif-analiz.csv');
+        $this->get('/panel/reactive'.$parameters)->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 1);
+        $response = $this->get('/panel/reactive/download'.$parameters)->assertOk()->assertDownload('enerjisa-reaktif-analiz.csv');
         $csv = $response->streamedContent();
         $this->assertStringContainsString('21.000000000', $csv);
         $this->assertStringContainsString('16.000000000', $csv);
@@ -114,13 +114,13 @@ class EnerjisaReactiveTest extends TestCase
             ]]),
         ]);
         $filters = ['installation' => '123', 'period' => 'daily', 'start' => '2026-08-01', 'end' => '2026-08-31'];
-        $response = $this->actingAs($member, 'enerjisa')->post('/enerjisa/reactive', $filters)->assertRedirect()->assertSessionHasNoErrors();
+        $response = $this->actingAs($member, 'enerjisa')->post('/panel/reactive', $filters)->assertRedirect()->assertSessionHasNoErrors();
         Http::assertSentCount(4);
         Http::assertSent(fn ($r) => str_contains($r->url(), 'energy-value') && $r['endDate'] === '01/09/2026 23:59:59' && $r['dataType'] === 1);
         $this->get($response->headers->get('Location'))->assertOk()->assertSee('%21,000');
-        $this->post('/enerjisa/reactive', array_replace($filters, ['period' => 'monthly']))->assertSessionHasNoErrors();
+        $this->post('/panel/reactive', array_replace($filters, ['period' => 'monthly']))->assertSessionHasNoErrors();
         Http::assertSentCount(4);
-        $this->post('/enerjisa/reactive', array_replace($filters, ['period' => 'monthly', 'refresh' => '1']))->assertSessionHasNoErrors();
+        $this->post('/panel/reactive', array_replace($filters, ['period' => 'monthly', 'refresh' => '1']))->assertSessionHasNoErrors();
         Http::assertSentCount(6);
     }
 
@@ -132,7 +132,7 @@ class EnerjisaReactiveTest extends TestCase
             'installationNumber' => '123', 'startDate' => '01/09/2026 00:00:00', 'endDate' => '10/09/2026 23:59:59',
         ], 'payload' => []]);
         Http::fake(['*oauth/token*' => Http::response(['access_token' => 'fake-token']), '*energy-value*' => Http::response([])]);
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/reactive', [
+        $this->actingAs($member, 'enerjisa')->post('/panel/reactive', [
             'installation' => '123', 'period' => 'monthly', 'start' => '2026-09-01', 'end' => '2026-09-20',
         ])->assertSessionHasNoErrors();
         Http::assertSentCount(4);
@@ -146,10 +146,10 @@ class EnerjisaReactiveTest extends TestCase
         $member->account->update(['client_id' => 'example-user', 'client_secret' => 'example-secret']);
         Http::fake(['*oauth/token*' => Http::response(['access_token' => 'fake-token']), '*energy-value*' => Http::response([], 503)]);
         $filters = ['installation' => '123', 'period' => 'daily', 'start' => '2026-08-01', 'end' => '2026-08-01'];
-        $this->actingAs($member, 'enerjisa')->post('/enerjisa/reactive', $filters)->assertSessionHasErrors('connection')
-            ->assertRedirectContains('/enerjisa/reactive?');
+        $this->actingAs($member, 'enerjisa')->post('/panel/reactive', $filters)->assertSessionHasErrors('connection')
+            ->assertRedirectContains('/panel/reactive?');
         $this->assertNotNull($member->account->queries()->first()->error);
-        $this->post('/enerjisa/reactive', $filters)->assertSessionHasErrors('connection');
+        $this->post('/panel/reactive', $filters)->assertSessionHasErrors('connection');
         Http::assertSentCount(4);
     }
 
@@ -163,10 +163,10 @@ class EnerjisaReactiveTest extends TestCase
                 ['meter_date' => '19/09/2026 23:00:00', 't_top_kWh' => '200', 't_ri_kVarh' => '31', 't_rc_kVarh' => '26'],
             ]])->push(['Status' => 5])->push([], 503)]);
         $filters = ['installation' => '123', 'period' => 'daily', 'start' => '2026-09-19', 'end' => '2026-09-20'];
-        $response = $this->actingAs($member, 'enerjisa')->post('/enerjisa/reactive', $filters)->assertSessionHasNoErrors();
+        $response = $this->actingAs($member, 'enerjisa')->post('/panel/reactive', $filters)->assertSessionHasNoErrors();
         $this->get($response->headers->get('Location'))->assertOk()->assertSee('%21,000');
         $this->assertSame(1, $member->account->queries()->whereNull('error')->count());
-        $this->post('/enerjisa/reactive', $filters)->assertSessionHasErrors('connection');
+        $this->post('/panel/reactive', $filters)->assertSessionHasErrors('connection');
         Http::assertSentCount(6);
     }
 
@@ -178,10 +178,10 @@ class EnerjisaReactiveTest extends TestCase
             ['instalationNumber' => '123', 'customerName' => 'Birinci İşletme'],
             ['instalationNumber' => '456', 'customerName' => 'İkinci İşletme'],
         ]]]);
-        $this->actingAs($member, 'enerjisa')->get('/enerjisa/reactive?installation=456')->assertOk()
+        $this->actingAs($member, 'enerjisa')->get('/panel/reactive?installation=456')->assertOk()
             ->assertSee('<select id="reactive-installation"', false)->assertViewHas('owner', 'İkinci İşletme');
-        $this->get('/enerjisa/query')->assertOk()->assertSee('<select id="installation"', false)->assertSee('Birinci İşletme');
+        $this->get('/panel/query')->assertOk()->assertSee('<select id="installation"', false)->assertSee('Birinci İşletme');
         $query = $member->account->queries()->where('kind', '1')->first();
-        $this->get('/enerjisa/results/'.$query->id)->assertOk()->assertViewHas('owner', 'Birinci İşletme');
+        $this->get('/panel/results/'.$query->id)->assertOk()->assertViewHas('owner', 'Birinci İşletme');
     }
 }

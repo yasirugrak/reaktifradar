@@ -3,7 +3,7 @@
 Reaktif enerji takibi, tesisat yönetimi ve e-posta/Telegram raporları. Bağımsız Laravel 13 / PHP 8.4 / Filament 5 uygulaması; OkuKid kodunu veya vendor dizinini kullanmaz.
 
 - Canlı adres: `https://reaktifradar.com` (kök adres pazarlama sayfasıdır).
-- Müşteri paneli: `/enerjisa`; sistem yönetimi: `/panel`.
+- Müşteri paneli: `/panel`; sistem yönetimi: `/admin`.
 - Mevcut PostgreSQL 16 servisi kullanılır; veritabanı `reaktifradar` olur.
 - Ayrı uygulama anahtarı, oturum çerezi ve Redis anahtar öneki ve Redis database numaraları kullanılır. PostgreSQL ve Redis servisleri OkuKid ile ortaktır. Kuyruk işleri şu an senkron yürür.
 - Bildirim servisi ilk kurulumda kapalıdır; taşınma tamamlanmadan açılmaz.
@@ -50,3 +50,11 @@ vendor/bin/phpstan analyse --memory-limit=1G
 ```
 
 Testler yalnızca `reaktifradar_test` ve `reaktifradar_import_test` veritabanlarını kullanır. Test bağlantısı kullanıcısının bu iki database üzerinde şema oluşturma yetkisi gerekir. `LegacyImportTest` ikinci test database'ini her testte sıfırlar; canlı veya geliştirme veritabanı adı kullanmayın.
+
+## Hizmet sayfası ve aranma talepleri
+
+Ana sayfadaki telefon için `CONTACT_PHONE`, e-posta için `CONTACT_EMAIL` tanımlayın. Telefon boşsa telefon bağlantısı gösterilmez; e-posta tanımlı değilse `MAIL_FROM_ADDRESS` kullanılır.
+
+Güncelleme sonrası `php artisan migrate --force` ve `php artisan optimize:clear` çalıştırın. Zamanlayıcıyı yeniden başlatın. Aranma talepleri SMTP gerektirmeden veritabanına kaydedilir; `/admin` içindeki **Aranma Talepleri** ekranından yeni/görüşüldü/tamamlandı olarak yönetilir.
+
+Eski `/enerjisa` GET bağlantıları sorgu parametreleri korunarak `/panel` adresine yönlenir. Yeni Telegram webhook adresi `/panel/telegram/webhook`; mevcut bot bağlantısının kesilmemesi için eski webhook da çalışır.
