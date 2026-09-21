@@ -5,7 +5,8 @@ Bu dosya kurulum tarifidir; DNS/TLS ve canlı veri aktarımının yapılmış ol
 ## 1. Hazırlık
 
 - Yeni bağımsız projeyi sunucuda `/home/reaktifradar` gibi ayrı dizine alın.
-- Var olan `okukid-postgres` PostgreSQL servisini kullanın. `egitim-platform` ağında ulaşılabilir olmalı. `compose.yml` yeni DB servisi açmaz.
+- Ortak Redis `okukid-redis` üzerinden kullanılır. Redis 8 ve 9 numaralı database'leri ReaktifRadar için ayırın; bunlar başka uygulamaya aitse `REAKTIFRADAR_REDIS_DB` ve `REAKTIFRADAR_REDIS_CACHE_DB` değerlerini boş numaralara ayarlayın. Önekler de ayrıdır. Genel Redis `FLUSHALL` komutu bütün uygulamaları etkiler.
+- Var olan `okukid-postgres` PostgreSQL servisini kullanın. `okukid_internal` ağında ulaşılabilir olmalı. `compose.yml` yeni DB servisi açmaz.
 - PostgreSQL yöneticisiyle `reaktifradar` rolünü ve database'ini oluşturun. Örnek, etkileşimli `psql` oturumunda:
 
 ```sql

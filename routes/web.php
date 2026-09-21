@@ -2,5 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/enerjisa');
+Route::view('/', 'landing')->name('home');
 require __DIR__.'/enerjisa.php';

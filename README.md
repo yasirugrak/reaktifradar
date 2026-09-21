@@ -2,16 +2,16 @@
 
 Reaktif enerji takibi, tesisat yönetimi ve e-posta/Telegram raporları. Bağımsız Laravel 13 / PHP 8.4 / Filament 5 uygulaması; OkuKid kodunu veya vendor dizinini kullanmaz.
 
-- Canlı adres: `https://reaktifradar.com` (kök adres müşteri paneline yönlenir).
+- Canlı adres: `https://reaktifradar.com` (kök adres pazarlama sayfasıdır).
 - Müşteri paneli: `/enerjisa`; sistem yönetimi: `/panel`.
 - Mevcut PostgreSQL 16 servisi kullanılır; veritabanı `reaktifradar` olur.
-- Ayrı uygulama anahtarı, oturum çerezi ve database cache kullanılır. Redis/kuyruk gerekmez.
+- Ayrı uygulama anahtarı, oturum çerezi ve Redis anahtar öneki ve Redis database numaraları kullanılır. PostgreSQL ve Redis servisleri OkuKid ile ortaktır. Kuyruk işleri şu an senkron yürür.
 - Bildirim servisi ilk kurulumda kapalıdır; taşınma tamamlanmadan açılmaz.
 - Enerjisa servisinin kendi adı ve uyumluluk için mevcut rota/tablo adları korunmuştur.
 
 ## Canlı kurulum ve veri taşıma
 
-`deploy/CUTOVER.md` adımlarını izleyin. Docker dosyası ikinci PostgreSQL başlatmaz ve dışarı port açmaz. Mevcut `egitim-platform` ve `yasir_net` ağlarına katılır. `.env` içinde ağ adları, `APP_UID`, `APP_GID` gerekirse özelleştirilebilir.
+`deploy/CUTOVER.md` adımlarını izleyin. Docker dosyası ikinci PostgreSQL başlatmaz ve dışarı port açmaz. Mevcut `okukid_internal` ve `yasir_net` ağlarına katılır. OkuKid compose projesi önce başlatılmalıdır. `.env` içinde ağ adları, `APP_UID`, `APP_GID` gerekirse özelleştirilebilir.
 
 ```sh
 cp .env.example .env
@@ -40,7 +40,7 @@ Yalnızca `enerjisa_*` tabloları ve `super_admin` rolündeki yönetici hesaplar
 
 ## Geliştirme ve test
 
-PHP 8.4, Composer ve PostgreSQL gerekir. Yerel `.env` için `APP_URL=http://127.0.0.1:8098`, `SESSION_SECURE_COOKIE=false`, `DB_HOST=127.0.0.1`, uygun port ve `MAIL_MAILER=log` kullanın. Bildirimleri kapalı tutun.
+PHP 8.4, Composer ve PostgreSQL gerekir. Yerel `.env` için `APP_URL=http://127.0.0.1:8098`, `SESSION_SECURE_COOKIE=false`, `DB_HOST=127.0.0.1`, uygun port ve `MAIL_MAILER=log`, `CACHE_STORE=database` kullanın. Bildirimleri kapalı tutun.
 
 ```sh
 composer install
