@@ -105,6 +105,8 @@ class Prospecting extends Page
 
         return ['ready' => (bool) config('prospecting.brave_key'), 'scans' => ProspectScan::latest()->limit(30)->get(),
             'scan' => ProspectScan::find($this->scanId), 'total' => (clone $query)->count(),
+            'approvedCount' => (clone $query)->where('status', 'approved')->count(),
+            'reviewCount' => (clone $query)->where('status', 'review')->count(),
             'contacts' => $query->when(in_array($this->filter, ['review', 'approved', 'excluded']), fn ($q) => $q->where('status', $this->filter))->latest()->paginate(20)];
     }
 }
