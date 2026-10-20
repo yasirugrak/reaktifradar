@@ -58,3 +58,17 @@ Ana sayfadaki telefon için `CONTACT_PHONE`, e-posta için `CONTACT_EMAIL` tanı
 Güncelleme sonrası `php artisan migrate --force` ve `php artisan optimize:clear` çalıştırın. Zamanlayıcıyı yeniden başlatın. Aranma talepleri önce veritabanına kaydedilir, sonra merkezi SMTP ile `CALLBACK_NOTIFICATION_EMAIL` (boşsa `CONTACT_EMAIL`) adresine HTML bildirim gönderilir. SMTP hatasında kayıt korunur ve kayıt kimliği uygulama günlüğüne yazılır; `/admin` içindeki **Aranma Talepleri** ekranından yeni/görüşüldü/tamamlandı olarak yönetilir.
 
 Eski `/enerjisa` GET bağlantıları sorgu parametreleri korunarak `/panel` adresine yönlenir. Yeni Telegram webhook adresi `/panel/telegram/webhook`; mevcut bot bağlantısının kesilmemesi için eski webhook da çalışır.
+
+## Firma e-posta keşfi
+
+`/admin/prospecting` yalnızca doğrulanmış süper yöneticilere açıktır.
+
+1. `php artisan migrate --force` ile tabloları oluşturun.
+2. `.env` içine `BRAVE_SEARCH_API_KEY` ekleyin, config cache kullanılıyorsa `php artisan config:cache` çalıştırın.
+3. `php artisan queue:work database --queue=default --timeout=60 --tries=1` işçisini sürekli çalıştırın (Supervisor veya container).
+
+İl/bölge, OSB adı ve sektörle Brave web araması yapılır. Sonuç başlıkları firma adayıdır; firma büyüklüğü ve OSB üyeliği manuel doğrulanmalıdır. En fazla 60 aday site, her sitede en fazla iki sayfa okunur. Genel kurumsal adresler alınır; kişisel adresler tahmin edilmez. Aynı taramadaki mükerrer e-postalar tekilleştirilir. Taramalar arasında aynı adres tekrar bulunabilir.
+
+Liste onayı gönderim izni kaydı değildir. Bu modül e-posta göndermez; yalnızca inceleme ve onaylı kayıtların CSV aktarımını sağlar. Kaynak, tarih ve hariç tutma durumu saklanır. Hariç tutma tarama kapsamındadır; kampanya sistemi eklenirken global ret listesi uygulanmalıdır.
+
+JavaScript ile oluşturulan, CAPTCHA isteyen veya erişilemeyen sayfalar desteklenmez. Hata sayısı arayüzde görünür. Özel ağ hedefleri engellenir, DNS sonucu bağlantıya sabitlenir, yönlendirmeler yeniden kontrol edilir.
