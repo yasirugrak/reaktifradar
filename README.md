@@ -64,11 +64,13 @@ Eski `/enerjisa` GET bağlantıları sorgu parametreleri korunarak `/panel` adre
 `/admin/prospecting` yalnızca doğrulanmış süper yöneticilere açıktır.
 
 1. `php artisan migrate --force` ile tabloları oluşturun.
-2. `.env` içine `BRAVE_SEARCH_API_KEY` ekleyin, config cache kullanılıyorsa `php artisan config:cache` çalıştırın.
-3. `php artisan queue:work database --queue=default --timeout=60 --tries=1` işçisini sürekli çalıştırın (Supervisor veya container).
+2. `.env` içine `GOOGLE_SEARCH_API_KEY` ve `GOOGLE_SEARCH_ENGINE_ID` (cx) ekleyin, config cache kullanılıyorsa `php artisan config:cache` çalıştırın.
+3. `php artisan queue:restart` ile mevcut işçileri yeniden başlatın. `php artisan queue:work database --queue=default --timeout=60 --tries=1` işçisini sürekli çalıştırın (Supervisor veya container).
 
-İl/bölge, OSB adı ve sektörle Brave web araması yapılır. Sonuç başlıkları firma adayıdır; firma büyüklüğü ve OSB üyeliği manuel doğrulanmalıdır. En fazla 60 aday site, her sitede en fazla iki sayfa okunur. Genel kurumsal adresler alınır; kişisel adresler tahmin edilmez. Aynı taramadaki mükerrer e-postalar tekilleştirilir. Taramalar arasında aynı adres tekrar bulunabilir.
+İl/bölge, OSB adı ve sektörle Google Custom Search JSON API ile web araması yapılır. Sonuç başlıkları firma adayıdır; firma büyüklüğü ve OSB üyeliği manuel doğrulanmalıdır. En fazla 60 aday site, her sitede en fazla iki sayfa okunur. Genel kurumsal adresler alınır; kişisel adresler tahmin edilmez. Aynı taramadaki mükerrer e-postalar tekilleştirilir. Taramalar arasında aynı adres tekrar bulunabilir.
 
 Liste onayı gönderim izni kaydı değildir. Bu modül e-posta göndermez; yalnızca inceleme ve onaylı kayıtların CSV aktarımını sağlar. Kaynak, tarih ve hariç tutma durumu saklanır. Hariç tutma tarama kapsamındadır; kampanya sistemi eklenirken global ret listesi uygulanmalıdır.
 
 JavaScript ile oluşturulan, CAPTCHA isteyen veya erişilemeyen sayfalar desteklenmez. Hata sayısı arayüzde görünür. Özel ağ hedefleri engellenir, DNS sonucu bağlantıya sabitlenir, yönlendirmeler yeniden kontrol edilir.
+
+Google ayarları: [Custom Search JSON API](https://console.cloud.google.com/apis/library/customsearch.googleapis.com) için API anahtarı ve [Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/all) panelinden arama motoru kimliği (cx) alın. Sonuçlar arama motorunun yapılandırılmış kapsamıyla sınırlıdır. API erişimi olan bir Google projesi gerekir; anahtar oluşturmak tek başına erişim sağlamaz. 20/40/60 aday için en fazla 2/4/6 sorgu yapılır; tekrar eden alan adları nedeniyle aday sayısı daha düşük olabilir.

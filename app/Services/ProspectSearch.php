@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProspectScan;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -10,30 +11,42 @@ class ProspectSearch
 {
     public function discover(ProspectScan $scan): array
     {
-        $key = config('prospecting.brave_key');
-        if (! $key) {
-            throw new RuntimeException('Brave Search API anahtarı tanımlanmamış.');
+        $key = config('prospecting.google_key');
+        $cx = config('prospecting.google_cx');
+        if (! $key || ! $cx) {
+            throw new RuntimeException('Google Custom Search API anahtarı ve arama motoru kimliği (cx) tanımlanmalıdır.');
         }
         $query = trim("{$scan->region} {$scan->osb} {$scan->sector} organize sanayi fabrika üretim firma iletişim");
+        $limit = min(60, max(1, (int) $scan->limit));
         $results = [];
-        for ($page = 0; $page < (int) ceil($scan->limit / 20); $page++) {
-            $response = Http::timeout(12)->connectTimeout(5)->withHeaders(['X-Subscription-Token' => $key])
-                ->get('https://api.search.brave.com/res/v1/web/search', ['q' => $query, 'country' => 'TR', 'search_lang' => 'tr', 'count' => 20, 'offset' => $page]);
-            if (! $response->successful()) {
-                throw new RuntimeException('Arama servisi yanıt vermedi; API anahtarını ve kotayı kontrol edin.');
+        for ($start = 1; $start <= $limit; $start += 10) {
+            try {
+                $response = Http::timeout(8)->connectTimeout(3)
+                    ->get('https://customsearch.googleapis.com/customsearch/v1', [
+                        'key' => $key, 'cx' => $cx, 'q' => $query,
+                        'gl' => 'tr', 'lr' => 'lang_tr',
+                        'num' => min(10, $limit - $start + 1), 'start' => $start,
+                    ]);
+            } catch (ConnectionException) {
+                // Do not propagate the request URL containing the API key to queue logs.
+                throw new RuntimeException('Google arama servisine bağlanılamadı.');
             }
-            foreach ($response->json('web.results', []) as $item) {
-                $url = $item['url'] ?? '';
+            if (! $response->successful()) {
+                throw new RuntimeException('Google arama servisi isteği reddetti; API erişimini, anahtarı, cx değerini ve kotayı kontrol edin.');
+            }
+            $items = $response->json('items', []);
+            foreach ($items as $item) {
+                $url = $item['link'] ?? '';
                 $host = strtolower(parse_url($url, PHP_URL_HOST) ?: '');
-                if ($host && ! isset($results[$host])) {
+                if ($host && in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https']) && ! isset($results[$host])) {
                     $results[$host] = ['url' => $url, 'company' => mb_substr($item['title'] ?? $host, 0, 255)];
                 }
             }
-            if ($page + 1 < ceil($scan->limit / 20)) {
-                usleep(1100000);
+            if (! $items || ! $response->json('queries.nextPage')) {
+                break;
             }
         }
 
-        return array_slice(array_values($results), 0, $scan->limit);
+        return array_slice(array_values($results), 0, $limit);
     }
 }

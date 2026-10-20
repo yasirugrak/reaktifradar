@@ -13,11 +13,11 @@
     <div class="pr">
     <div class="pr-hero">
         <div><div class="pr-eyebrow">FİRMA KEŞFİ</div><h2>Bir sonraki müşterinizi bulun.</h2><p class="prospect-muted">Bölgenizi seçin. Kurumsal iletişim adreslerini keşfedin, inceleyin ve listenizi oluşturun.</p></div>
-        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $ready ? 'API anahtarı tanımlı' : 'Bağlantı kurulmadı' }}</span>
+        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $ready ? 'Google API ayarları tanımlı' : 'Bağlantı kurulmadı' }}</span>
     </div>
     @unless($ready)
-        <div class="pr-connect"><div><strong>Başlamak için Brave API anahtarınızı tanımlayın</strong><p class="prospect-muted">Brave hesabınızda bir plan etkinleştirin, API Keys bölümünden anahtar oluşturun.</p></div><a class="prospect-link" href="https://api-dashboard.search.brave.com/" target="_blank" rel="noopener noreferrer">Brave panelini aç ↗</a></div>
-        <details class="prospect-muted" style="margin-top:10px"><summary style="cursor:pointer">Kurulum adımları</summary><p>Sunucunun .env dosyasına BRAVE_SEARCH_API_KEY ekleyin. Ardından php artisan config:cache ve php artisan queue:restart çalıştırın. Veritabanı kuyruk işçisi çalışır durumda olmalıdır.</p></details>
+        <div class="pr-connect"><div><strong>Google arama bağlantısını tanımlayın</strong><p class="prospect-muted">Custom Search JSON API anahtarı ve Programmable Search Engine kimliği (cx) gereklidir.</p></div><a class="prospect-link" href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud’u aç ↗</a></div>
+        <details class="prospect-muted" style="margin-top:10px"><summary style="cursor:pointer">Kurulum adımları</summary><p>Sunucunun .env dosyasına GOOGLE_SEARCH_API_KEY ve GOOGLE_SEARCH_ENGINE_ID (cx) ekleyin. Arama motoru kimliğini Programmable Search Engine panelinden alın. Ardından php artisan config:cache ve php artisan queue:restart çalıştırın. Veritabanı kuyruk işçisi çalışır durumda olmalıdır.</p></details>
     @endunless
     <div class="prospect-grid" wire:poll.5s>
         <div>
@@ -27,7 +27,7 @@
                     <label>Organize sanayi bölgesi <input class="prospect-input" wire:model="osb" placeholder="Örn. Gebze OSB" maxlength="150"> @error('osb') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>Sektör (isteğe bağlı) <input class="prospect-input" wire:model="sector" placeholder="Örn. metal, otomotiv, plastik" maxlength="100"> @error('sector') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>En fazla aday site <select class="prospect-input" wire:model="limit"><option value="20">20 site</option><option value="40">40 site</option><option value="60">60 site</option></select> @error('limit') <span class="pr-error">{{ $message }}</span> @enderror</label>
-                    <p class="prospect-muted pr-help">Her tarama en fazla 3 arama API isteği kullanır. Aynı sitede en fazla 2 sayfa okunur; info, satış, ihracat gibi kurumsal adresler alınır.</p>
+                    <p class="prospect-muted pr-help">Her tarama 20 / 40 / 60 aday için en fazla 2 / 4 / 6 Google arama API isteği kullanır. Aynı sitede en fazla 2 sayfa okunur; info, satış, ihracat gibi kurumsal adresler alınır.</p>
                     <x-filament::button type="submit" :disabled="!$ready" wire:loading.attr="disabled" wire:target="start"><span wire:loading.remove wire:target="start">Firmaları keşfet →</span><span wire:loading wire:target="start">Tarama hazırlanıyor…</span></x-filament::button>
                 </form>
             </x-filament::section>

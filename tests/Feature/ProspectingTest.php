@@ -25,7 +25,7 @@ class ProspectingTest extends TestCase
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         $this->actingAs(User::factory()->create(['role' => PanelRole::SuperAdmin, 'email_verified_at' => now()]));
         $this->get(Prospecting::getUrl())->assertOk()->assertSee('Firma ve iletişim listesi');
-        config(['prospecting.brave_key' => 'test-secret']);
+        config(['prospecting.google_key' => 'test-secret', 'prospecting.google_cx' => 'test-engine']);
         Queue::fake();
         $page = Livewire::test(Prospecting::class)->set('region', 'Kocaeli')->set('osb', 'Gebze OSB')->call('start')->assertHasNoErrors();
         $scan = ProspectScan::firstOrFail();

@@ -44,8 +44,8 @@ class Prospecting extends Page
     {
         abort_unless(static::canAccess(), 403);
         $this->validate(['region' => 'required|string|max:100', 'osb' => 'nullable|string|max:150', 'sector' => 'nullable|string|max:100', 'limit' => 'required|integer|min:10|max:60']);
-        if (! config('prospecting.brave_key')) {
-            Notification::make()->title('Önce sunucuda Brave Search API anahtarını tanımlayın.')->warning()->send();
+        if (! config('prospecting.google_key') || ! config('prospecting.google_cx')) {
+            Notification::make()->title('Önce Google Custom Search API anahtarını ve arama motoru kimliğini (cx) tanımlayın.')->warning()->send();
 
             return;
         }
@@ -103,7 +103,7 @@ class Prospecting extends Page
         abort_unless(static::canAccess(), 403);
         $query = ProspectContact::where('prospect_scan_id', $this->scanId);
 
-        return ['ready' => (bool) config('prospecting.brave_key'), 'scans' => ProspectScan::latest()->limit(30)->get(),
+        return ['ready' => (bool) (config('prospecting.google_key') && config('prospecting.google_cx')), 'scans' => ProspectScan::latest()->limit(30)->get(),
             'scan' => ProspectScan::find($this->scanId), 'total' => (clone $query)->count(),
             'approvedCount' => (clone $query)->where('status', 'approved')->count(),
             'reviewCount' => (clone $query)->where('status', 'review')->count(),
