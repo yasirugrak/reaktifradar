@@ -98,6 +98,16 @@ class Prospecting extends Page
         ProspectContact::where('prospect_scan_id', $this->scanId)->findOrFail($id)->update(['status' => $status]);
     }
 
+    public function approveAll(): void
+    {
+        abort_unless(static::canAccess(), 403);
+        ProspectScan::findOrFail($this->scanId);
+        $count = ProspectContact::where('prospect_scan_id', $this->scanId)
+            ->where('status', 'review')->update(['status' => 'approved']);
+        $this->resetPage();
+        Notification::make()->title($count.' e-posta adresi onaylandı.')->success()->send();
+    }
+
     public function restartScan(int $id): void
     {
         abort_unless(static::canAccess(), 403);

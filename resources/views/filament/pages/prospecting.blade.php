@@ -66,6 +66,7 @@
                     @else
                         <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
                     @endunless
+                    <x-filament::button color="success" wire:click="approveAll" wire:confirm="Bu taramanın tüm sayfalarındaki inceleme bekleyen adresler onaylanacak. Hariç tutulan adresler korunacak. Devam edilsin mi?" :disabled="$reviewCount === 0" wire:loading.attr="disabled" wire:target="approveAll">Tümünü onayla ({{ $reviewCount }})</x-filament::button>
                     <x-filament::button color="success" wire:click="sendApproved" wire:confirm="Bu taramadaki gönderime uygun {{ $sendableCount }} onaylı adrese tanıtım e-postası gönderilecek. Devam edilsin mi?" :disabled="$sendableCount === 0" wire:loading.attr="disabled" wire:target="sendApproved">Onaylananlara mail gönder ({{ $sendableCount }})</x-filament::button>
                     <x-filament::button wire:click="export" :disabled="$approvedCount === 0" wire:loading.attr="disabled" wire:target="export">Onaylananları CSV indir</x-filament::button>
                 </div>
