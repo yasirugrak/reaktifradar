@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Jobs\RunProspectScan;
+use App\Services\ProspectSearch;
 use App\Models\ProspectContact;
 use App\Models\ProspectScan;
 use BackedEnum;
@@ -22,6 +23,8 @@ class Prospecting extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ReaktifRadar';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-magnifying-glass';
+
+    public string $provider = 'google';
 
     public string $region = '';
 
@@ -43,13 +46,13 @@ class Prospecting extends Page
     public function start(): void
     {
         abort_unless(static::canAccess(), 403);
-        $this->validate(['region' => 'required|string|max:100', 'osb' => 'nullable|string|max:150', 'sector' => 'nullable|string|max:100', 'limit' => 'required|integer|min:10|max:60']);
-        if (! config('prospecting.google_key') || ! config('prospecting.google_cx')) {
-            Notification::make()->title('Önce Google Custom Search API anahtarını ve arama motoru kimliğini (cx) tanımlayın.')->warning()->send();
+        $this->validate(['provider' => 'required|in:google,serper', 'region' => 'required|string|max:100', 'osb' => 'nullable|string|max:150', 'sector' => 'nullable|string|max:100', 'limit' => 'required|integer|min:10|max:60']);
+        if (! ProspectSearch::configured($this->provider)) {
+            Notification::make()->title('Seçilen arama servisinin API ayarlarını tanımlayın.')->warning()->send();
 
             return;
         }
-        $scan = ProspectScan::create(['region' => $this->region, 'osb' => $this->osb, 'sector' => $this->sector, 'limit' => $this->limit]);
+        $scan = ProspectScan::create(['provider' => $this->provider, 'region' => $this->region, 'osb' => $this->osb, 'sector' => $this->sector, 'limit' => $this->limit]);
         RunProspectScan::dispatch($scan->id);
         $this->scanId = $scan->id;
         $this->resetPage();
@@ -85,6 +88,7 @@ class Prospecting extends Page
 
             return;
         }
+        $this->provider = $scan->provider ?? 'google';
         $this->region = $scan->region;
         $this->osb = $scan->osb ?? '';
         $this->sector = $scan->sector ?? '';
@@ -138,7 +142,7 @@ class Prospecting extends Page
         abort_unless(static::canAccess(), 403);
         $query = ProspectContact::where('prospect_scan_id', $this->scanId);
 
-        return ['ready' => (bool) (config('prospecting.google_key') && config('prospecting.google_cx')), 'scans' => ProspectScan::latest()->limit(30)->get(),
+        return ['ready' => ProspectSearch::configured($this->provider), 'scans' => ProspectScan::latest()->limit(30)->get(),
             'scan' => ProspectScan::find($this->scanId), 'total' => (clone $query)->count(),
             'approvedCount' => (clone $query)->where('status', 'approved')->count(),
             'reviewCount' => (clone $query)->where('status', 'review')->count(),

@@ -46,7 +46,7 @@ class ProspectSearchTest extends TestCase
             (new ProspectSearch)->discover((new ProspectScan)->forceFill(['limit' => 20]));
             $this->fail('Missing cx should fail.');
         } catch (RuntimeException $exception) {
-            $this->assertStringContainsString('cx', $exception->getMessage());
+            $this->assertStringContainsString('API ayarları eksik', $exception->getMessage());
         }
         Http::assertNothingSent();
     }
@@ -57,5 +57,27 @@ class ProspectSearchTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Google HTTP 403: API denied [gizli] [gizli] [bağlantı]');
         (new ProspectSearch)->discover((new ProspectScan)->forceFill(['limit' => 20]));
+    }
+
+    public function test_serper_uses_own_key_and_pagination_without_google_credentials(): void
+    {
+        config(['prospecting.serper_key' => 'serper-secret', 'prospecting.google_key' => '', 'prospecting.google_cx' => '']);
+        $items = array_map(fn ($i) => ['title' => 'Firma '.$i, 'link' => 'https://firma'.$i.'.test'], range(1, 10));
+        Http::fakeSequence()->push(['organic' => $items])->push(['organic' => [['title' => 'Other', 'link' => 'https://other.test']]]);
+        $results = (new ProspectSearch)->discover((new ProspectScan)->forceFill(['provider' => 'serper', 'region' => 'Ankara', 'limit' => 20]));
+        $this->assertCount(11, $results);
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request) => $request->url() === 'https://google.serper.dev/search'
+            && $request->method() === 'POST' && $request->hasHeader('X-API-KEY', 'serper-secret')
+            && $request['page'] === 2 && $request['gl'] === 'tr');
+    }
+
+    public function test_serper_rejection_redacts_key(): void
+    {
+        config(['prospecting.serper_key' => 'serper-secret']);
+        Http::fakeSequence()->push(['message' => 'Invalid serper-secret'], 401);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Serper HTTP 401: Invalid [gizli]');
+        (new ProspectSearch)->discover((new ProspectScan)->forceFill(['provider' => 'serper', 'limit' => 20]));
     }
 }

@@ -77,3 +77,7 @@ Liste onayı gönderim izni kaydı değildir. Bu modül e-posta göndermez; yaln
 JavaScript ile oluşturulan, CAPTCHA isteyen veya erişilemeyen sayfalar desteklenmez. Hata sayısı arayüzde görünür. Özel ağ hedefleri engellenir, DNS sonucu bağlantıya sabitlenir, yönlendirmeler yeniden kontrol edilir.
 
 Google ayarları: [Custom Search JSON API](https://console.cloud.google.com/apis/library/customsearch.googleapis.com) için API anahtarı ve [Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/all) panelinden arama motoru kimliği (cx) alın. Sonuçlar arama motorunun yapılandırılmış kapsamıyla sınırlıdır. API erişimi olan bir Google projesi gerekir; anahtar oluşturmak tek başına erişim sağlamaz. 20/40/60 aday için en fazla 2/4/6 sorgu yapılır; tekrar eden alan adları nedeniyle aday sayısı daha düşük olabilir.
+
+### Serper ile tarama
+
+`.env` dosyasına `SERPER_API_KEY` ekleyin. `php artisan migrate --force` ile tarama servis alanını ekleyin; ardından config önbelleğini yenileyin ve worker servisini yeniden başlatın. Tarama oluştururken **Arama servisi → Serper** seçin. Google için mevcut iki ayar kullanılmaya devam eder. Servis tercihi her taramada saklanır; eski kayıtlar Google olarak kalır ve yeniden başlatma kayıtlı servisi kullanır. Farklı servisle denemek için formdan yeni tarama oluşturun. Serper için Google anahtarı veya cx gerekmez.

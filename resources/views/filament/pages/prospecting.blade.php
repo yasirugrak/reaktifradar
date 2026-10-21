@@ -13,28 +13,33 @@
     <div class="pr">
     <div class="pr-hero">
         <div><div class="pr-eyebrow">FİRMA KEŞFİ</div><h2>Bir sonraki müşterinizi bulun.</h2><p class="prospect-muted">Bölgenizi seçin. Kurumsal iletişim adreslerini keşfedin, inceleyin ve listenizi oluşturun.</p></div>
-        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $ready ? 'Google API ayarları tanımlı' : 'Bağlantı kurulmadı' }}</span>
+        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $ready ? 'Seçilen servisin API ayarları tanımlı' : 'Bağlantı kurulmadı' }}</span>
     </div>
     @unless($ready)
+        @if($provider === 'serper')
+            <div class="pr-connect"><div><strong>Serper bağlantısını tanımlayın</strong><p class="prospect-muted">.env dosyasına SERPER_API_KEY ekleyin. Ardından config önbelleğini yenileyip worker servisini yeniden başlatın.</p></div><a class="prospect-link" href="https://serper.dev/" target="_blank" rel="noopener noreferrer">Serper panelini aç ↗</a></div>
+        @else
         <div class="pr-connect"><div><strong>Google arama bağlantısını tanımlayın</strong><p class="prospect-muted">Custom Search JSON API anahtarı ve Programmable Search Engine kimliği (cx) gereklidir.</p></div><a class="prospect-link" href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud’u aç ↗</a></div>
         <details class="prospect-muted" style="margin-top:10px"><summary style="cursor:pointer">Kurulum adımları</summary><p>Sunucunun .env dosyasına GOOGLE_SEARCH_API_KEY ve GOOGLE_SEARCH_ENGINE_ID (cx) ekleyin. Arama motoru kimliğini Programmable Search Engine panelinden alın. Ardından php artisan config:cache ve php artisan queue:restart çalıştırın. Veritabanı kuyruk işçisi çalışır durumda olmalıdır.</p></details>
+        @endif
     @endunless
     <div class="prospect-grid" wire:poll.5s>
         <div>
             <x-filament::section heading="Tarama oluştur">
                 <form wire:submit="start" class="prospect-form">
+                    <label>Arama servisi <select class="prospect-input" wire:model.live="provider"><option value="google">Google Custom Search</option><option value="serper">Serper</option></select> @error('provider') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>İl / bölge <input class="prospect-input" wire:model="region" placeholder="Örn. Kocaeli, Gebze" required maxlength="100"> @error('region') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>Organize sanayi bölgesi <input class="prospect-input" wire:model="osb" placeholder="Örn. Gebze OSB" maxlength="150"> @error('osb') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>Sektör (isteğe bağlı) <input class="prospect-input" wire:model="sector" placeholder="Örn. metal, otomotiv, plastik" maxlength="100"> @error('sector') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>En fazla aday site <select class="prospect-input" wire:model="limit"><option value="20">20 site</option><option value="40">40 site</option><option value="60">60 site</option></select> @error('limit') <span class="pr-error">{{ $message }}</span> @enderror</label>
-                    <p class="prospect-muted pr-help">Her tarama 20 / 40 / 60 aday için en fazla 2 / 4 / 6 Google arama API isteği kullanır. Aynı sitede en fazla 2 sayfa okunur; info, satış, ihracat gibi kurumsal adresler alınır.</p>
+                    <p class="prospect-muted pr-help">Her tarama 20 / 40 / 60 aday için en fazla 2 / 4 / 6 arama API isteği kullanır. Aynı sitede en fazla 2 sayfa okunur; info, satış, ihracat gibi kurumsal adresler alınır.</p>
                     <x-filament::button type="submit" :disabled="!$ready" wire:loading.attr="disabled" wire:target="start"><span wire:loading.remove wire:target="start">Firmaları keşfet →</span><span wire:loading wire:target="start">Tarama hazırlanıyor…</span></x-filament::button>
                 </form>
             </x-filament::section>
             <div class="prospect-history">
                 <strong>Son taramalar</strong>
                 @forelse($scans as $item)
-                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
+                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ ($item->provider ?? 'google') === 'serper' ? 'Serper' : 'Google' }} · {{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
                 @empty <p class="prospect-muted">Henüz tarama yok.</p> @endforelse
             </div>
         </div>
@@ -50,7 +55,7 @@
                     <div><span class="pr-badge {{ $scan->status }}">{{ $labels[$scan->status] ?? $scan->status }}</span><p class="prospect-muted">{{ $scan->processed }} / {{ count($scan->candidates ?? []) }} site · {{ $total }} adres · {{ $scan->errors }} okunamayan sayfa</p></div>
                     @if(in_array($scan->status, ['queued','running'])) <x-filament::button color="gray" wire:click="cancel">Durdur</x-filament::button> @endif
                     @unless(in_array($scan->status, ['queued', 'running']))
-                        <x-filament::button color="gray" wire:click="restartScan({{ $scan->id }})" wire:confirm="Aynı ayarlarla yeni bir tarama başlatılsın mı? Mevcut sonuçlar korunacak ve Google arama kotası kullanılacak." :disabled="!$ready" wire:loading.attr="disabled">Yeniden başlat</x-filament::button>
+                        <x-filament::button color="gray" wire:click="restartScan({{ $scan->id }})" wire:confirm="Aynı ayarlarla yeni bir tarama başlatılsın mı? Mevcut sonuçlar korunacak ve kayıtlı servisin arama kotası kullanılacak." wire:loading.attr="disabled">Yeniden başlat</x-filament::button>
                         <x-filament::button color="danger" wire:click="deleteScan({{ $scan->id }})" wire:confirm="Bu tarama ve onaylananlar dahil tüm adresleri kalıcı olarak silinecek. Devam edilsin mi?" wire:loading.attr="disabled">Sil</x-filament::button>
                     @else
                         <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
@@ -60,7 +65,7 @@
                 <div class="pr-progress" role="progressbar" aria-label="Tarama ilerlemesi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}"><div style="width:{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}%"></div></div>
                 @if($scan->status === 'queued') <p class="prospect-muted">Tarama işçisi bekleniyor. Bu durum uzun sürerse kuyruk işçisini kontrol edin.</p> @endif
                 @if($scan->error) <p role="alert" class="pr-error">{{ $scan->error }}</p> @endif
-                <div class="pr-toolbar"><p class="prospect-muted">{{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
+                <div class="pr-toolbar"><p class="prospect-muted">{{ ($scan->provider ?? 'google') === 'serper' ? 'Serper' : 'Google' }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
                 <div class="pr-table-wrap">
                     <table class="prospect-table"><thead><tr><th>Firma / kaynak</th><th>E-posta</th><th>İnceleme</th></tr></thead><tbody>
                         @forelse($contacts as $contact)
