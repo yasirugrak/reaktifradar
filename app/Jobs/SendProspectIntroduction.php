@@ -31,7 +31,7 @@ class SendProspectIntroduction implements ShouldQueue
         $delivery = ProspectMailDelivery::findOrFail($this->deliveryId);
         $contact = ProspectContact::find($delivery->prospect_contact_id);
         if (! $contact || $contact->status !== 'approved' || strtolower(trim($contact->email)) !== $delivery->email
-            || ProspectContact::whereRaw('LOWER(email) = ?', [$delivery->email])->where('status', 'excluded')->exists()) {
+            || ProspectContact::whereRaw('LOWER(TRIM(email)) = ?', [$delivery->email])->where('status', 'excluded')->exists()) {
             $delivery->update(['status' => 'cancelled']);
             return;
         }

@@ -41,6 +41,8 @@ class Prospecting extends Page
 
     public ?int $scanId = null;
 
+    public bool $poolMode = true;
+
     public string $filter = '';
 
     public static function canAccess(): bool
@@ -74,6 +76,7 @@ class Prospecting extends Page
         ]);
         RunProspectScan::dispatch($scan->id);
         $this->scanId = $scan->id;
+        $this->poolMode = false;
         $this->resetPage();
         Notification::make()->title('Tarama kuyruğa alındı.')->success()->send();
     }
@@ -82,7 +85,21 @@ class Prospecting extends Page
     {
         abort_unless(static::canAccess(), 403);
         $this->scanId = ProspectScan::findOrFail($id)->id;
+        $this->poolMode = false;
         $this->resetPage();
+    }
+
+    public function showPool(): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $this->poolMode = true;
+        $this->filter = '';
+        $this->resetPage();
+    }
+
+    protected function contactsQuery()
+    {
+        return $this->poolMode ? ProspectContact::pool() : ProspectContact::where('prospect_scan_id', $this->scanId);
     }
 
     public function cancel(): void
@@ -95,15 +112,22 @@ class Prospecting extends Page
     {
         abort_unless(static::canAccess(), 403);
         abort_unless(in_array($status, ['review', 'approved', 'excluded']), 422);
-        ProspectContact::where('prospect_scan_id', $this->scanId)->findOrFail($id)->update(['status' => $status]);
+        $contact = $this->contactsQuery()->findOrFail($id);
+        if ($this->poolMode) {
+            ProspectContact::whereRaw('LOWER(TRIM(email)) = ?', [strtolower(trim($contact->email))])->update(['status' => $status]);
+        } else {
+            $contact->update(['status' => $status]);
+        }
+        $this->resetPage();
     }
 
     public function approveAll(): void
     {
         abort_unless(static::canAccess(), 403);
-        ProspectScan::findOrFail($this->scanId);
-        $count = ProspectContact::where('prospect_scan_id', $this->scanId)
-            ->where('status', 'review')->update(['status' => 'approved']);
+        if (! $this->poolMode) {
+            ProspectScan::findOrFail($this->scanId);
+        }
+        $count = $this->contactsQuery()->where('status', 'review')->update(['status' => 'approved']);
         $this->resetPage();
         Notification::make()->title($count.' e-posta adresi onaylandı.')->success()->send();
     }
@@ -152,15 +176,13 @@ class Prospecting extends Page
 
     protected function sendableContacts()
     {
-        return ProspectContact::where('prospect_scan_id', $this->scanId)->where('status', 'approved')
-            ->whereNotIn('email', ProspectMailDelivery::select('email'))
-            ->whereNotIn('email', ProspectContact::select('email')->where('status', 'excluded'));
+        return ProspectContact::pool()->where('status', 'approved')
+            ->whereNotIn(DB::raw('LOWER(TRIM(email))'), ProspectMailDelivery::selectRaw('LOWER(TRIM(email))'));
     }
 
     public function sendApproved(): void
     {
         abort_unless(static::canAccess(), 403);
-        ProspectScan::findOrFail($this->scanId);
         $count = DB::transaction(function () {
             $count = 0;
             foreach ($this->sendableContacts()->get() as $contact) {
@@ -186,13 +208,14 @@ class Prospecting extends Page
     public function export()
     {
         abort_unless(static::canAccess(), 403);
-        $id = $this->scanId;
+        $id = $this->poolMode ? 'havuz' : $this->scanId;
+        $query = $this->contactsQuery()->where('status', 'approved');
 
-        return response()->streamDownload(function () use ($id) {
+        return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, ['Firma', 'E-posta', 'Kaynak', 'Bulunma tarihi'], ';', '"', '');
-            foreach (ProspectContact::where('prospect_scan_id', $id)->where('status', 'approved')->cursor() as $contact) {
+            foreach ($query->cursor() as $contact) {
                 $cells = [$contact->company, $contact->email, $contact->source_url, (string) $contact->created_at];
                 fputcsv($out, array_map(fn ($v) => preg_match('/^[=+@\-\s]/u', $v) ? "'".$v : $v, $cells), ';', '"', '');
             }
@@ -203,10 +226,11 @@ class Prospecting extends Page
     protected function getViewData(): array
     {
         abort_unless(static::canAccess(), 403);
-        $query = ProspectContact::where('prospect_scan_id', $this->scanId);
+        $query = $this->contactsQuery();
 
         return ['ready' => ProspectSearch::configured($this->provider), 'scans' => ProspectScan::latest()->limit(30)->get(),
-            'scan' => ProspectScan::find($this->scanId), 'total' => (clone $query)->count(),
+            'scan' => $this->poolMode ? null : ProspectScan::find($this->scanId),
+            'duplicateCount' => ProspectContact::count() - ProspectContact::pool()->count(), 'total' => (clone $query)->count(),
             'sendableCount' => $this->sendableContacts()->count(),
             'approvedCount' => (clone $query)->where('status', 'approved')->count(),
             'reviewCount' => (clone $query)->where('status', 'review')->count(),

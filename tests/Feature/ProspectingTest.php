@@ -20,6 +20,39 @@ class ProspectingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pool_deduplicates_all_scans_and_exclusion_wins(): void
+    {
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $this->actingAs(User::factory()->create(['role' => PanelRole::SuperAdmin, 'email_verified_at' => now()]));
+        Queue::fake();
+        $first = ProspectScan::create(['region' => 'Ankara', 'limit' => 20]);
+        $second = ProspectScan::create(['region' => 'Bursa', 'limit' => 20]);
+        foreach ([
+            [$first, ' INFO@firma.test ', 'review'],
+            [$second, 'info@firma.test', 'approved'],
+            [$first, 'blocked@firma.test', 'approved'],
+            [$second, 'BLOCKED@firma.test', 'excluded'],
+            [$first, 'new@firma.test', 'review'],
+            [$second, 'NEW@firma.test', 'review'],
+        ] as [$scan, $email, $status]) {
+            ProspectContact::create(['prospect_scan_id' => $scan->id, 'company' => 'Firma', 'email' => $email, 'source_url' => 'https://firma.test', 'status' => $status]);
+        }
+        $this->assertSame(3, ProspectContact::pool()->count());
+        $this->assertSame(1, ProspectContact::pool()->where('status', 'excluded')->count());
+        $page = Livewire::test(Prospecting::class)->call('showPool')->assertSee('Ortak e-posta havuzu');
+        $page->call('approveAll')->assertHasNoErrors();
+        $this->assertSame(2, ProspectContact::pool()->where('status', 'approved')->count());
+        $page->call('export')->assertFileDownloaded('firma-eposta-havuz.csv');
+        $page->call('sendApproved')->call('sendApproved');
+        Queue::assertPushed(\App\Jobs\SendProspectIntroduction::class, 2);
+        $this->assertDatabaseCount('prospect_mail_deliveries', 2);
+        $this->assertDatabaseHas('prospect_mail_deliveries', ['email' => 'info@firma.test']);
+        $this->assertDatabaseMissing('prospect_mail_deliveries', ['email' => 'blocked@firma.test']);
+        $approved = ProspectContact::pool()->where('status', 'approved')->firstOrFail();
+        $page->call('review', $approved->id, 'excluded');
+        $this->assertSame(2, ProspectContact::pool()->where('status', 'excluded')->count());
+    }
+
     public function test_page_and_actions_and_export(): void
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));

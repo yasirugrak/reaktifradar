@@ -43,21 +43,23 @@
                 </form>
             </x-filament::section>
             <div class="prospect-history">
+                <button wire:click="showPool" aria-pressed="{{ $poolMode ? 'true' : 'false' }}"><strong>Ortak e-posta havuzu</strong><br><span class="prospect-muted">Tüm taramalar · Tekilleştirilmiş adresler</span></button>
                 <strong>Son taramalar</strong>
                 @forelse($scans as $item)
-                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$item->provider ?? 'google'] }} · {{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
+                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ !$poolMode && $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$item->provider ?? 'google'] }} · {{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
                 @empty <p class="prospect-muted">Henüz tarama yok.</p> @endforelse
             </div>
         </div>
         <x-filament::section heading="Firma ve iletişim listesi">
-            @if($scan)
+            @if($poolMode || $scan)
                 <div class="pr-summary">
                     <div class="pr-stat"><strong>{{ $total }}</strong><span>Bulunan e-posta</span></div>
                     <div class="pr-stat"><strong>{{ $reviewCount }}</strong><span>İnceleme bekleyen</span></div>
                     <div class="pr-stat"><strong style="color:var(--pr-accent)">{{ $approvedCount }}</strong><span>Listeye onaylanan</span></div>
-                    <div class="pr-stat"><strong>{{ $scan->processed }}</strong><span>{{ $scan->provider === 'website' ? 'Okunan sayfa' : 'Taranan site' }}</span></div>
+                    <div class="pr-stat"><strong>{{ $poolMode ? $duplicateCount : $scan->processed }}</strong><span>{{ $poolMode ? 'Elenen tekrar' : ($scan->provider === 'website' ? 'Okunan sayfa' : 'Taranan site') }}</span></div>
                 </div>
                 <div class="prospect-actions" style="justify-content:space-between;margin-bottom:16px">
+                    @unless($poolMode)
                     <div><span class="pr-badge {{ $scan->status }}">{{ $labels[$scan->status] ?? $scan->status }}</span><p class="prospect-muted">{{ $scan->processed }} / {{ count($scan->candidates ?? []) }} {{ $scan->provider === 'website' ? 'sayfa' : 'site' }} · {{ $total }} adres · {{ $scan->errors }} okunamayan sayfa</p></div>
                     @if(in_array($scan->status, ['queued','running'])) <x-filament::button color="gray" wire:click="cancel">Durdur</x-filament::button> @endif
                     @unless(in_array($scan->status, ['queued', 'running']))
@@ -66,15 +68,23 @@
                     @else
                         <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
                     @endunless
-                    <x-filament::button color="success" wire:click="approveAll" wire:confirm="Bu taramanın tüm sayfalarındaki inceleme bekleyen adresler onaylanacak. Hariç tutulan adresler korunacak. Devam edilsin mi?" :disabled="$reviewCount === 0" wire:loading.attr="disabled" wire:target="approveAll">Tümünü onayla ({{ $reviewCount }})</x-filament::button>
-                    <x-filament::button color="success" wire:click="sendApproved" wire:confirm="Bu taramadaki gönderime uygun {{ $sendableCount }} onaylı adrese tanıtım e-postası gönderilecek. Devam edilsin mi?" :disabled="$sendableCount === 0" wire:loading.attr="disabled" wire:target="sendApproved">Onaylananlara mail gönder ({{ $sendableCount }})</x-filament::button>
+                    @endunless
+                    <x-filament::button color="success" wire:click="approveAll" wire:confirm="{{ $poolMode ? 'Ortak havuzun' : 'Bu taramanın' }} tüm sayfalarındaki inceleme bekleyen adresler onaylanacak. Hariç tutulan adresler korunacak. Devam edilsin mi?" :disabled="$reviewCount === 0" wire:loading.attr="disabled" wire:target="approveAll">Tümünü onayla ({{ $reviewCount }})</x-filament::button>
+                    @if($poolMode)
+                    <x-filament::button color="success" wire:click="sendApproved" wire:confirm="Tüm taramaların ortak havuzundaki gönderime uygun {{ $sendableCount }} onaylı adrese tanıtım e-postası gönderilecek. Devam edilsin mi?" :disabled="$sendableCount === 0" wire:loading.attr="disabled" wire:target="sendApproved">Havuzdan mail gönder ({{ $sendableCount }})</x-filament::button>
+                    @else
+                    <x-filament::button color="gray" wire:click="showPool">Gönderim için ortak havuzu aç</x-filament::button>
+                    @endif
                     <x-filament::button wire:click="export" :disabled="$approvedCount === 0" wire:loading.attr="disabled" wire:target="export">Onaylananları CSV indir</x-filament::button>
                 </div>
+                @unless($poolMode)
                 <div class="pr-progress" role="progressbar" aria-label="Tarama ilerlemesi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}"><div style="width:{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}%"></div></div>
                 @if($scan->status === 'queued') <p class="prospect-muted">Tarama işçisi bekleniyor. Bu durum uzun sürerse kuyruk işçisini kontrol edin.</p> @endif
                 @if($scan->error) <p role="alert" class="pr-error">{{ $scan->error }}</p> @endif
+                @endunless
+                @if($poolMode)<p class="prospect-muted">Tüm tarama sonuçları otomatik birleştirilir. E-posta adreslerinde büyük/küçük harf ve baştaki/sondaki boşluklar dikkate alınmaz. Her adres bir kez görünür. Herhangi bir taramada hariç tutulan adres havuzda da hariç tutulur.</p>@endif
                 <p class="prospect-muted" style="margin-top:12px">Tanıtım e-postası her adrese ayrı gönderilir. Daha önce kuyruğa alınmış adresler ve herhangi bir taramada hariç tutulanlar tekrar eklenmez. <a class="prospect-link" href="{{ \App\Filament\Pages\IntroductionMail::getUrl() }}">Maili önizle ve kendine test gönder ↗</a></p>
-                <div class="pr-toolbar"><p class="prospect-muted">{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$scan->provider ?? 'google'] }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
+                <div class="pr-toolbar"><p class="prospect-muted">@if($poolMode)Ortak e-posta havuzu @else{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$scan->provider ?? 'google'] }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
                 <div class="pr-table-wrap">
                     <table class="prospect-table"><thead><tr><th>Firma / kaynak</th><th>E-posta</th><th>İnceleme</th></tr></thead><tbody>
                         @forelse($contacts as $contact)
