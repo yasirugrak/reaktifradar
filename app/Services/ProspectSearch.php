@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProspectScan;
+use App\Exceptions\ProspectSearchException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -32,7 +33,12 @@ class ProspectSearch
                 throw new RuntimeException('Google arama servisine bağlanılamadı.');
             }
             if (! $response->successful()) {
-                throw new RuntimeException('Google arama servisi isteği reddetti; API erişimini, anahtarı, cx değerini ve kotayı kontrol edin.');
+                $detail = $response->json('error.message');
+                $detail = is_string($detail) ? $detail : 'API erişimini, anahtarı, cx değerini ve kotayı kontrol edin.';
+                $detail = str_replace(array_filter([$key, $cx, rawurlencode($key), rawurlencode($cx)]), '[gizli]', $detail);
+                $detail = preg_replace('~https?://[^\s]+~i', '[bağlantı]', $detail);
+                $detail = preg_replace('/[\x00-\x1F\x7F]/', ' ', $detail);
+                throw new ProspectSearchException('Google HTTP '.$response->status().': '.mb_substr($detail, 0, 220));
             }
             $items = $response->json('items', []);
             foreach ($items as $item) {

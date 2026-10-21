@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ProspectContact;
+use App\Exceptions\ProspectSearchException;
 use App\Models\ProspectScan;
 use App\Services\ProspectCrawler;
 use App\Services\ProspectSearch;
@@ -75,6 +76,6 @@ class RunProspectScan implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        ProspectScan::whereKey($this->scanId)->where('status', '!=', 'cancelled')->update(['status' => 'failed', 'error' => 'Tarama tamamlanamadı. API anahtarı, kota ve kuyruk işçisini kontrol edin.']);
+        ProspectScan::whereKey($this->scanId)->where('status', '!=', 'cancelled')->update(['status' => 'failed', 'error' => $exception instanceof ProspectSearchException ? $exception->getMessage() : 'Tarama tamamlanamadı. API anahtarı, kota ve kuyruk işçisini kontrol edin.']);
     }
 }

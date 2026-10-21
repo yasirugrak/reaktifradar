@@ -53,9 +53,9 @@ class ProspectSearchTest extends TestCase
 
     public function test_api_rejection_does_not_expose_credentials(): void
     {
-        Http::fakeSequence()->push(['error' => ['message' => 'test-key']], 403);
+        Http::fakeSequence()->push(['error' => ['message' => 'API denied test-key test-cx https://example.test/?key=test-key']], 403);
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Google arama servisi isteği reddetti; API erişimini, anahtarı, cx değerini ve kotayı kontrol edin.');
+        $this->expectExceptionMessage('Google HTTP 403: API denied [gizli] [gizli] [bağlantı]');
         (new ProspectSearch)->discover((new ProspectScan)->forceFill(['limit' => 20]));
     }
 }
