@@ -85,6 +85,12 @@
                 @if($poolMode)<p class="prospect-muted">Tüm tarama sonuçları otomatik birleştirilir. E-posta adreslerinde büyük/küçük harf ve baştaki/sondaki boşluklar dikkate alınmaz. Her adres bir kez görünür. Herhangi bir taramada hariç tutulan adres havuzda da hariç tutulur.</p>@endif
                 <p class="prospect-muted" style="margin-top:12px">Tanıtım e-postası her adrese ayrı gönderilir. Daha önce kuyruğa alınmış adresler ve herhangi bir taramada hariç tutulanlar tekrar eklenmez. <a class="prospect-link" href="{{ \App\Filament\Pages\IntroductionMail::getUrl() }}">Maili önizle ve kendine test gönder ↗</a></p>
                 <div class="pr-toolbar"><p class="prospect-muted">@if($poolMode)Ortak e-posta havuzu @else{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$scan->provider ?? 'google'] }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
+                <div class="prospect-actions" style="margin-bottom:16px">
+                    <input type="search" class="prospect-input" style="flex:1;min-width:200px;margin:0" wire:model.live.debounce.300ms="search" maxlength="200" aria-label="Firma, e-posta veya kaynak ara" placeholder="Firma adı, e-posta veya kaynak adresi ara…">
+                    @if($search !== '')<x-filament::button color="gray" wire:click="$set('search', '')">Temizle</x-filament::button>@endif
+                    <span class="prospect-muted">{{ $contacts->total() }} sonuç</span>
+                </div>
+                @if(trim($search) !== '')<p class="prospect-muted" style="margin-bottom:12px">Arama yalnızca listeyi filtreler. Tümünü onayla, CSV ve mail gönderimi mevcut taramanın / havuzun tamamı için geçerlidir.</p>@endif
                 <div class="pr-table-wrap">
                     <table class="prospect-table"><thead><tr><th>Firma / kaynak</th><th>E-posta</th><th>İnceleme</th></tr></thead><tbody>
                         @forelse($contacts as $contact)

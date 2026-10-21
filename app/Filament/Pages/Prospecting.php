@@ -45,6 +45,8 @@ class Prospecting extends Page
 
     public string $filter = '';
 
+    public string $search = '';
+
     public static function canAccess(): bool
     {
         return EnerjisaAdmin::canAccess();
@@ -174,6 +176,30 @@ class Prospecting extends Page
         $this->resetPage();
     }
 
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    protected function applySearch($query)
+    {
+        $term = mb_substr(trim($this->search), 0, 200);
+        if ($term === '') {
+            return $query;
+        }
+        $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term)).'%';
+        $matches = ProspectContact::query()->where(function ($match) use ($pattern) {
+            foreach (['company', 'email', 'source_url'] as $column) {
+                $match->orWhereRaw("LOWER({$column}) LIKE ? ESCAPE '!'", [$pattern]);
+            }
+        });
+
+        // Match any source of a pooled address without changing its review status.
+        return $this->poolMode
+            ? $query->whereIn(DB::raw('LOWER(TRIM(email))'), $matches->selectRaw('LOWER(TRIM(email))'))
+            : $query->whereIn('id', $matches->select('id'));
+    }
+
     protected function sendableContacts()
     {
         return ProspectContact::pool()->where('status', 'approved')
@@ -234,6 +260,6 @@ class Prospecting extends Page
             'sendableCount' => $this->sendableContacts()->count(),
             'approvedCount' => (clone $query)->where('status', 'approved')->count(),
             'reviewCount' => (clone $query)->where('status', 'review')->count(),
-            'contacts' => $query->with('introductionDelivery')->when(in_array($this->filter, ['review', 'approved', 'excluded']), fn ($q) => $q->where('status', $this->filter))->latest()->paginate(20)];
+            'contacts' => $this->applySearch($query)->with('introductionDelivery')->when(in_array($this->filter, ['review', 'approved', 'excluded']), fn ($q) => $q->where('status', $this->filter))->latest()->paginate(20)];
     }
 }
