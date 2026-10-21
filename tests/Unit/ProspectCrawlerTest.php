@@ -7,6 +7,27 @@ use PHPUnit\Framework\TestCase;
 
 class ProspectCrawlerTest extends TestCase
 {
+    public function test_decodes_cloudflare_addresses_and_preserves_mailbox_filters(): void
+    {
+        $encode = static function (string $email): string {
+            $encoded = '6c';
+            foreach (str_split($email) as $byte) {
+                $encoded .= sprintf('%02x', ord($byte) ^ 0x6c);
+            }
+            return $encoded;
+        };
+        $info = $encode('info@firma.com');
+        $personal = $encode('ali@gmail.com');
+        $html = '<a data-cfemail="'.$info.'">[email&#160;protected]</a>'
+            .'<span data-cfemail="'.$info.'">Protected</span>'
+            .'<a href="/cdn-cgi/l/email-protection#'.$personal.'">Protected</a>'
+            .'<span data-cfemail="xyz"></span><span data-cfemail="abc"></span>'
+            .'<span data-cfemail="00"></span><span data-cfemail="000102"></span>';
+        $crawler = new ProspectCrawler;
+        $this->assertSame(['info@firma.com', 'ali@gmail.com'], $crawler->emails($html, false));
+        $this->assertSame(['info@firma.com'], $crawler->emails($html));
+    }
+
     public function test_extracts_only_shared_company_mailboxes(): void
     {
         $crawler = new ProspectCrawler;

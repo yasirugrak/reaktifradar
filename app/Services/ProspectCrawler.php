@@ -69,6 +69,27 @@ class ProspectCrawler
     public function emails(string $html, bool $sharedOnly = true): array
     {
         $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Cloudflare displays these public addresses by decoding them in the browser.
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        foreach ($xpath->query('//*[@data-cfemail] | //a[contains(@href, "/cdn-cgi/l/email-protection#")]') as $node) {
+            $encoded = $node->getAttribute('data-cfemail');
+            if ($encoded === '') {
+                $encoded = explode('#', $node->getAttribute('href'), 2)[1] ?? '';
+            }
+            if (strlen($encoded) < 4 || strlen($encoded) > 510 || strlen($encoded) % 2 !== 0 || ! ctype_xdigit($encoded)) {
+                continue;
+            }
+            $bytes = hex2bin($encoded);
+            $decoded = '';
+            for ($i = 1; $i < strlen($bytes); $i++) {
+                $decoded .= chr(ord($bytes[$i]) ^ ord($bytes[0]));
+            }
+            if (filter_var($decoded, FILTER_VALIDATE_EMAIL)) {
+                $text .= ' '.$decoded.' ';
+            }
+        }
         preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $text, $matches);
 
         return array_values(array_unique(array_filter(array_map('strtolower', $matches[0]), function ($email) use ($sharedOnly) {
