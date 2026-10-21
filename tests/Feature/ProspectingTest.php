@@ -67,4 +67,26 @@ class ProspectingTest extends TestCase
         $job->handle($search, $crawler);
         $this->assertDatabaseCount('prospect_contacts', 1);
     }
+
+    public function test_bulk_mail_only_queues_approved_once_and_rechecks_exclusions(): void
+    {
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $this->actingAs(User::factory()->create(['role' => PanelRole::SuperAdmin, 'email_verified_at' => now()]));
+        Queue::fake();
+        \Illuminate\Support\Facades\Mail::fake();
+        $scan = ProspectScan::create(['region' => 'Ankara', 'limit' => 20]);
+        foreach (['approved', 'review', 'excluded'] as $status) {
+            ProspectContact::create(['prospect_scan_id' => $scan->id, 'company' => 'Firma', 'email' => $status.'@firma.test', 'source_url' => 'https://firma.test', 'status' => $status]);
+        }
+        $page = Livewire::test(Prospecting::class)->set('scanId', $scan->id);
+        $page->call('sendApproved')->call('sendApproved');
+        $this->assertDatabaseCount('prospect_mail_deliveries', 1);
+        Queue::assertPushed(\App\Jobs\SendProspectIntroduction::class, 1);
+        $delivery = \App\Models\ProspectMailDelivery::firstOrFail();
+        $job = new \App\Jobs\SendProspectIntroduction($delivery->id);
+        ProspectContact::whereKey($delivery->prospect_contact_id)->update(['status' => 'excluded']);
+        $job->handle();
+        $this->assertSame('cancelled', $delivery->fresh()->status);
+        \Illuminate\Support\Facades\Mail::assertNothingSent();
+    }
 }

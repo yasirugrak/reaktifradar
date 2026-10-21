@@ -21,6 +21,14 @@ class IntroductionMailTest extends TestCase
         $this->assertStringStartsWith('[TEST]', $mail->envelope()->subject);
     }
 
+    public function test_campaign_mail_has_no_test_label(): void
+    {
+        $mail = new ProspectingIntroduction(test: false);
+        $this->assertSame(ProspectingIntroduction::SUBJECT, $mail->envelope()->subject);
+        $mail->assertDontSeeInHtml('test e-postasıdır');
+        $mail->assertDontSeeInText('test e-postasıdır');
+    }
+
     public function test_sends_only_to_authenticated_admin_and_limits_repeated_clicks(): void
     {
         Mail::fake();

@@ -3,6 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Jobs\RunProspectScan;
+use App\Jobs\SendProspectIntroduction;
+use App\Models\ProspectMailDelivery;
+use Illuminate\Support\Facades\DB;
 use App\Services\ProspectSearch;
 use App\Models\ProspectContact;
 use App\Models\ProspectScan;
@@ -120,6 +123,39 @@ class Prospecting extends Page
         $this->resetPage();
     }
 
+    protected function sendableContacts()
+    {
+        return ProspectContact::where('prospect_scan_id', $this->scanId)->where('status', 'approved')
+            ->whereNotIn('email', ProspectMailDelivery::select('email'))
+            ->whereNotIn('email', ProspectContact::select('email')->where('status', 'excluded'));
+    }
+
+    public function sendApproved(): void
+    {
+        abort_unless(static::canAccess(), 403);
+        ProspectScan::findOrFail($this->scanId);
+        $count = DB::transaction(function () {
+            $count = 0;
+            foreach ($this->sendableContacts()->get() as $contact) {
+                $email = strtolower(trim($contact->email));
+                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    continue;
+                }
+                $inserted = DB::table('prospect_mail_deliveries')->insertOrIgnore([
+                    'email' => $email, 'prospect_contact_id' => $contact->id, 'status' => 'queued',
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+                if ($inserted) {
+                    $id = ProspectMailDelivery::where('email', $email)->value('id');
+                    SendProspectIntroduction::dispatch($id)->delay(now()->addSeconds($count * 3));
+                    $count++;
+                }
+            }
+            return $count;
+        });
+        Notification::make()->title($count.' adres için tanıtım e-postası kuyruğa alındı.')->success()->send();
+    }
+
     public function export()
     {
         abort_unless(static::canAccess(), 403);
@@ -144,8 +180,9 @@ class Prospecting extends Page
 
         return ['ready' => ProspectSearch::configured($this->provider), 'scans' => ProspectScan::latest()->limit(30)->get(),
             'scan' => ProspectScan::find($this->scanId), 'total' => (clone $query)->count(),
+            'sendableCount' => $this->sendableContacts()->count(),
             'approvedCount' => (clone $query)->where('status', 'approved')->count(),
             'reviewCount' => (clone $query)->where('status', 'review')->count(),
-            'contacts' => $query->when(in_array($this->filter, ['review', 'approved', 'excluded']), fn ($q) => $q->where('status', $this->filter))->latest()->paginate(20)];
+            'contacts' => $query->with('introductionDelivery')->when(in_array($this->filter, ['review', 'approved', 'excluded']), fn ($q) => $q->where('status', $this->filter))->latest()->paginate(20)];
     }
 }

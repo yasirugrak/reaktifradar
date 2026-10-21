@@ -14,5 +14,6 @@
 <tr><td style="padding:0 32px 34px;"><p style="font-size:16px;line-height:1.75;margin:0 0 24px;">Tesisinizin mevcut durumunu ve takip ihtiyacını kısa bir görüşmede konuşalım. Web sitemizden numaranızı bırakın, sizi arayalım.</p>
 <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#16795f" style="border-radius:8px;"><a href="{{ $website }}/#iletisim" style="display:inline-block;padding:15px 25px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Tesisiniz için görüşelim →</a></td></tr></table>
 <p style="font-size:14px;margin:24px 0 0;line-height:1.7;">İyi çalışmalar,<br><strong>ReaktifRadar Ekibi</strong><br><a href="{{ $website }}" style="color:#16795f;">reaktifradar.com</a></p></td></tr>
-<tr><td style="padding:20px 32px;background:#f8fafc;font-size:12px;color:#64748b;line-height:1.6;">Bu ileti, tanıtım şablonunu kontrol etmeniz için gönderilen test e-postasıdır.<br>Takip sıklığı ve veri güncelliği ölçüm kaynağına bağlıdır. Hizmet kapsamı ilk görüşmede netleştirilir.</td></tr>
+<tr><td style="padding:20px 32px;background:#f8fafc;font-size:12px;color:#64748b;line-height:1.6;">@if($test)Bu ileti, tanıtım şablonunu kontrol etmeniz için gönderilen test e-postasıdır.<br>@endif
+Takip sıklığı ve veri güncelliği ölçüm kaynağına bağlıdır. Hizmet kapsamı ilk görüşmede netleştirilir.</td></tr>
 </table></td></tr></table></body></html>

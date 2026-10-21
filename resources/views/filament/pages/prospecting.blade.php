@@ -61,16 +61,22 @@
                     @else
                         <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
                     @endunless
+                    <x-filament::button color="success" wire:click="sendApproved" wire:confirm="Bu taramadaki gönderime uygun {{ $sendableCount }} onaylı adrese tanıtım e-postası gönderilecek. Devam edilsin mi?" :disabled="$sendableCount === 0" wire:loading.attr="disabled" wire:target="sendApproved">Onaylananlara mail gönder ({{ $sendableCount }})</x-filament::button>
                     <x-filament::button wire:click="export" :disabled="$approvedCount === 0" wire:loading.attr="disabled" wire:target="export">Onaylananları CSV indir</x-filament::button>
                 </div>
                 <div class="pr-progress" role="progressbar" aria-label="Tarama ilerlemesi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}"><div style="width:{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}%"></div></div>
                 @if($scan->status === 'queued') <p class="prospect-muted">Tarama işçisi bekleniyor. Bu durum uzun sürerse kuyruk işçisini kontrol edin.</p> @endif
                 @if($scan->error) <p role="alert" class="pr-error">{{ $scan->error }}</p> @endif
+                <p class="prospect-muted" style="margin-top:12px">Tanıtım e-postası her adrese ayrı gönderilir. Daha önce kuyruğa alınmış adresler ve herhangi bir taramada hariç tutulanlar tekrar eklenmez. <a class="prospect-link" href="{{ \App\Filament\Pages\IntroductionMail::getUrl() }}">Maili önizle ve kendine test gönder ↗</a></p>
                 <div class="pr-toolbar"><p class="prospect-muted">{{ ($scan->provider ?? 'google') === 'serper' ? 'Serper' : 'Google' }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
                 <div class="pr-table-wrap">
                     <table class="prospect-table"><thead><tr><th>Firma / kaynak</th><th>E-posta</th><th>İnceleme</th></tr></thead><tbody>
                         @forelse($contacts as $contact)
-                            <tr wire:key="contact-{{ $contact->id }}"><td><div class="pr-company">{{ $contact->company }}</div><a class="prospect-link" href="{{ $contact->source_url }}" target="_blank" rel="noopener noreferrer">Kaynağı incele ↗</a></td><td class="pr-email">{{ $contact->email }}</td><td>
+                            <tr wire:key="contact-{{ $contact->id }}"><td><div class="pr-company">{{ $contact->company }}</div><a class="prospect-link" href="{{ $contact->source_url }}" target="_blank" rel="noopener noreferrer">Kaynağı incele ↗</a></td><td><div class="pr-email">{{ $contact->email }}</div>
+                                @if($delivery = $contact->introductionDelivery)
+                                    <p class="prospect-muted" style="margin-top:8px">{{ ['queued' => 'Mail kuyrukta', 'sending' => 'Gönderiliyor', 'sent' => 'Posta sunucusuna iletildi', 'failed' => 'Gönderim doğrulanamadı', 'cancelled' => 'Gönderim iptal edildi'][$delivery->status] ?? $delivery->status }}</p>
+                                @endif
+                            </td><td>
                                 <p class="pr-badge {{ $contact->status }}">{{ ['review'=>'Bekliyor','approved'=>'Onaylandı','excluded'=>'Hariç tutuldu'][$contact->status] }}</p>
                                 <div class="pr-row-actions"><button class="prospect-link" wire:click="review({{ $contact->id }}, 'approved')">Onayla</button><button wire:click="review({{ $contact->id }}, 'excluded')">Hariç tut</button><button wire:click="review({{ $contact->id }}, 'review')">Sıfırla</button></div>
                             </td></tr>
@@ -83,6 +89,6 @@
             @endif
         </x-filament::section>
     </div>
-    <p class="prospect-muted pr-footer">Firma büyüklüğü ve OSB üyeliği kaynak üzerinden doğrulanmalıdır. Liste onayı, tanıtım e-postası gönderim izni anlamına gelmez.</p>
+    <p class="prospect-muted pr-footer">Firma büyüklüğü ve OSB üyeliği kaynak üzerinden doğrulanmalıdır. Gönderime başlamadan önce alıcı listenizi ve tanıtım metninizi kontrol edin.</p>
     </div>
 </x-filament-panels::page>

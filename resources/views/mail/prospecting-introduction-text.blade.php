@@ -17,5 +17,7 @@ Tesisinizin mevcut durumunu ve takip ihtiyacını kısa bir görüşmede konuşa
 ReaktifRadar Ekibi
 {{ $website }}
 
+@if($test)
 Bu ileti, tanıtım şablonunu kontrol etmeniz için gönderilen test e-postasıdır.
+@endif
 Takip sıklığı ve veri güncelliği ölçüm kaynağına bağlıdır. Hizmet kapsamı ilk görüşmede netleştirilir.

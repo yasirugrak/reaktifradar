@@ -10,9 +10,11 @@ class ProspectingIntroduction extends Mailable
 {
     public const SUBJECT = 'Reaktif ceza riskini faturadan önce fark edin';
 
+    public function __construct(public bool $test = true) {}
+
     public function envelope(): Envelope
     {
-        return new Envelope(subject: '[TEST] '.self::SUBJECT);
+        return new Envelope(subject: ($this->test ? '[TEST] ' : '').self::SUBJECT);
     }
 
     public function content(): Content

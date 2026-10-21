@@ -72,7 +72,7 @@ Tarama “Tarama işçisi bekleniyor” durumunda kalırsa `docker compose ps wo
 
 İl/bölge, OSB adı ve sektörle Google Custom Search JSON API ile web araması yapılır. Sonuç başlıkları firma adayıdır; firma büyüklüğü ve OSB üyeliği manuel doğrulanmalıdır. En fazla 60 aday site, her sitede en fazla iki sayfa okunur. Genel kurumsal adresler alınır; kişisel adresler tahmin edilmez. Aynı taramadaki mükerrer e-postalar tekilleştirilir. Taramalar arasında aynı adres tekrar bulunabilir.
 
-Liste onayı gönderim izni kaydı değildir. Bu modül e-posta göndermez; yalnızca inceleme ve onaylı kayıtların CSV aktarımını sağlar. Kaynak, tarih ve hariç tutma durumu saklanır. Hariç tutma tarama kapsamındadır; kampanya sistemi eklenirken global ret listesi uygulanmalıdır.
+Liste onayı gönderim izni kaydı değildir. Modül inceleme, onaylı kayıtların CSV aktarımı ve ayrıca onaylanan toplu tanıtım gönderimini sağlar. Kaynak, tarih ve hariç tutma durumu saklanır. Toplu gönderimde herhangi bir taramada hariç tutulan adresler de dışarıda bırakılır.
 
 JavaScript ile oluşturulan, CAPTCHA isteyen veya erişilemeyen sayfalar desteklenmez. Hata sayısı arayüzde görünür. Özel ağ hedefleri engellenir, DNS sonucu bağlantıya sabitlenir, yönlendirmeler yeniden kontrol edilir.
 
@@ -81,3 +81,9 @@ Google ayarları: [Custom Search JSON API](https://console.cloud.google.com/apis
 ### Serper ile tarama
 
 `.env` dosyasına `SERPER_API_KEY` ekleyin. `php artisan migrate --force` ile tarama servis alanını ekleyin; ardından config önbelleğini yenileyin ve worker servisini yeniden başlatın. Tarama oluştururken **Arama servisi → Serper** seçin. Google için mevcut iki ayar kullanılmaya devam eder. Servis tercihi her taramada saklanır; eski kayıtlar Google olarak kalır ve yeniden başlatma kayıtlı servisi kullanır. Farklı servisle denemek için formdan yeni tarama oluşturun. Serper için Google anahtarı veya cx gerekmez.
+
+### Tanıtım e-postası gönderimi
+
+`/admin/introduction-mail` ekranından önizleme ve kendi yönetici adresinize test gönderimi yapılır. Firma keşfinde **Onaylananlara mail gönder** butonu seçili taramanın tüm sayfalarındaki uygun onaylı adresleri onay sonrası database kuyruğuna alır. Her alıcı ayrı SMTP iletisi alır. Bu tanıtım aynı e-posta adresine taramalar arasında da yalnızca bir kez kuyruğa alınır. Gönderim kaydı tarama silinse bile korunur. Kuyruktayken onayı kaldırılan, silinen veya herhangi bir taramada hariç tutulan alıcı gönderilmez. SMTP hatası/zaman aşımında otomatik tekrar yapılmaz; teslim durumu belirsiz olabileceğinden posta sunucusu kayıtları incelenmelidir. “Posta sunucusuna iletildi” alıcının gelen kutusuna teslim edildiği anlamına gelmez.
+
+Yeni `prospect_mail_deliveries` tablosu için migration çalıştırın ve worker servisini yeniden başlatın. Gönderim merkezi SMTP ayarlarını kullanır.
