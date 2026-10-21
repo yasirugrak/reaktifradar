@@ -14,7 +14,7 @@
     <div class="pr">
     <div class="pr-hero">
         <div><div class="pr-eyebrow">FİRMA KEŞFİ</div><h2>Bir sonraki müşterinizi bulun.</h2><p class="prospect-muted">Bölgenizi seçin. Kurumsal iletişim adreslerini keşfedin, inceleyin ve listenizi oluşturun.</p></div>
-        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $ready ? 'Seçilen servisin API ayarları tanımlı' : 'Bağlantı kurulmadı' }}</span>
+        <span class="pr-badge {{ $ready ? 'approved' : 'queued' }}">{{ $provider === 'website' ? 'API gerektirmez' : ($ready ? 'Seçilen servisin API ayarları tanımlı' : 'Bağlantı kurulmadı') }}</span>
     </div>
     @unless($ready)
         @if($provider === 'serper')
@@ -28,19 +28,24 @@
         <div>
             <x-filament::section heading="Tarama oluştur">
                 <form wire:submit="start" class="prospect-form">
-                    <label>Arama servisi <select class="prospect-input" wire:model.live="provider"><option value="google">Google Custom Search</option><option value="serper">Serper</option></select> @error('provider') <span class="pr-error">{{ $message }}</span> @enderror</label>
+                    <label>Arama servisi <select class="prospect-input" wire:model.live="provider"><option value="google">Google Custom Search</option><option value="serper">Serper</option><option value="website">Web sitesi bağlantısı (API gerektirmez)</option></select> @error('provider') <span class="pr-error">{{ $message }}</span> @enderror</label>
+                    @if($provider === 'website')
+                        <label>Web sitesi / sayfa bağlantısı <input class="prospect-input" type="url" wire:model="sourceUrl" placeholder="https://firma.com/" required maxlength="2048"> @error('sourceUrl') <span class="pr-error">{{ $message }}</span> @enderror</label>
+                        <p class="prospect-muted pr-help">Girdiğiniz sayfadan başlayarak aynı sitedeki en fazla 20 sayfa okunur. İletişim sayfalarına öncelik verilir; açıkça yayımlanan e-posta adresleri kaynaklarıyla listelenir. JavaScript ile yüklenen veya görsel içindeki adresler bulunamayabilir.</p>
+                    @else
                     <label>İl / bölge <input class="prospect-input" wire:model="region" placeholder="Örn. Kocaeli, Gebze" required maxlength="100"> @error('region') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>Organize sanayi bölgesi <input class="prospect-input" wire:model="osb" placeholder="Örn. Gebze OSB" maxlength="150"> @error('osb') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>Sektör (isteğe bağlı) <input class="prospect-input" wire:model="sector" placeholder="Örn. metal, otomotiv, plastik" maxlength="100"> @error('sector') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <label>En fazla aday site <select class="prospect-input" wire:model="limit"><option value="20">20 site</option><option value="40">40 site</option><option value="60">60 site</option></select> @error('limit') <span class="pr-error">{{ $message }}</span> @enderror</label>
                     <p class="prospect-muted pr-help">Her tarama 20 / 40 / 60 aday için en fazla 2 / 4 / 6 arama API isteği kullanır. Aynı sitede en fazla 2 sayfa okunur; info, satış, ihracat gibi kurumsal adresler alınır.</p>
-                    <x-filament::button type="submit" :disabled="!$ready" wire:loading.attr="disabled" wire:target="start"><span wire:loading.remove wire:target="start">Firmaları keşfet →</span><span wire:loading wire:target="start">Tarama hazırlanıyor…</span></x-filament::button>
+                    @endif
+                    <x-filament::button type="submit" :disabled="!$ready" wire:loading.attr="disabled" wire:target="start"><span wire:loading.remove wire:target="start">{{ $provider === 'website' ? 'Sitedeki mailleri bul →' : 'Firmaları keşfet →' }}</span><span wire:loading wire:target="start">Tarama hazırlanıyor…</span></x-filament::button>
                 </form>
             </x-filament::section>
             <div class="prospect-history">
                 <strong>Son taramalar</strong>
                 @forelse($scans as $item)
-                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ ($item->provider ?? 'google') === 'serper' ? 'Serper' : 'Google' }} · {{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
+                    <button wire:click="selectScan({{ $item->id }})" wire:key="scan-{{ $item->id }}" aria-pressed="{{ $scanId === $item->id ? 'true' : 'false' }}"><strong>{{ $item->region }}</strong><br><span class="prospect-muted">{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$item->provider ?? 'google'] }} · {{ $item->osb }} · {{ $item->created_at->timezone('Europe/Istanbul')->format('d.m H:i') }} · {{ $labels[$item->status] ?? $item->status }}</span></button>
                 @empty <p class="prospect-muted">Henüz tarama yok.</p> @endforelse
             </div>
         </div>
@@ -50,13 +55,13 @@
                     <div class="pr-stat"><strong>{{ $total }}</strong><span>Bulunan e-posta</span></div>
                     <div class="pr-stat"><strong>{{ $reviewCount }}</strong><span>İnceleme bekleyen</span></div>
                     <div class="pr-stat"><strong style="color:var(--pr-accent)">{{ $approvedCount }}</strong><span>Listeye onaylanan</span></div>
-                    <div class="pr-stat"><strong>{{ $scan->processed }}</strong><span>Taranan site</span></div>
+                    <div class="pr-stat"><strong>{{ $scan->processed }}</strong><span>{{ $scan->provider === 'website' ? 'Okunan sayfa' : 'Taranan site' }}</span></div>
                 </div>
                 <div class="prospect-actions" style="justify-content:space-between;margin-bottom:16px">
-                    <div><span class="pr-badge {{ $scan->status }}">{{ $labels[$scan->status] ?? $scan->status }}</span><p class="prospect-muted">{{ $scan->processed }} / {{ count($scan->candidates ?? []) }} site · {{ $total }} adres · {{ $scan->errors }} okunamayan sayfa</p></div>
+                    <div><span class="pr-badge {{ $scan->status }}">{{ $labels[$scan->status] ?? $scan->status }}</span><p class="prospect-muted">{{ $scan->processed }} / {{ count($scan->candidates ?? []) }} {{ $scan->provider === 'website' ? 'sayfa' : 'site' }} · {{ $total }} adres · {{ $scan->errors }} okunamayan sayfa</p></div>
                     @if(in_array($scan->status, ['queued','running'])) <x-filament::button color="gray" wire:click="cancel">Durdur</x-filament::button> @endif
                     @unless(in_array($scan->status, ['queued', 'running']))
-                        <x-filament::button color="gray" wire:click="restartScan({{ $scan->id }})" wire:confirm="Aynı ayarlarla yeni bir tarama başlatılsın mı? Mevcut sonuçlar korunacak ve kayıtlı servisin arama kotası kullanılacak." wire:loading.attr="disabled">Yeniden başlat</x-filament::button>
+                        <x-filament::button color="gray" wire:click="restartScan({{ $scan->id }})" wire:confirm="Aynı ayarlarla yeni bir tarama başlatılsın mı? Mevcut sonuçlar korunacak ve kayıtlı tarama yöntemi kullanılacak." wire:loading.attr="disabled">Yeniden başlat</x-filament::button>
                         <x-filament::button color="danger" wire:click="deleteScan({{ $scan->id }})" wire:confirm="Bu tarama ve onaylananlar dahil tüm adresleri kalıcı olarak silinecek. Devam edilsin mi?" wire:loading.attr="disabled">Sil</x-filament::button>
                     @else
                         <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
@@ -68,7 +73,7 @@
                 @if($scan->status === 'queued') <p class="prospect-muted">Tarama işçisi bekleniyor. Bu durum uzun sürerse kuyruk işçisini kontrol edin.</p> @endif
                 @if($scan->error) <p role="alert" class="pr-error">{{ $scan->error }}</p> @endif
                 <p class="prospect-muted" style="margin-top:12px">Tanıtım e-postası her adrese ayrı gönderilir. Daha önce kuyruğa alınmış adresler ve herhangi bir taramada hariç tutulanlar tekrar eklenmez. <a class="prospect-link" href="{{ \App\Filament\Pages\IntroductionMail::getUrl() }}">Maili önizle ve kendine test gönder ↗</a></p>
-                <div class="pr-toolbar"><p class="prospect-muted">{{ ($scan->provider ?? 'google') === 'serper' ? 'Serper' : 'Google' }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
+                <div class="pr-toolbar"><p class="prospect-muted">{{ ['website' => 'Web sitesi', 'serper' => 'Serper', 'google' => 'Google'][$scan->provider ?? 'google'] }} · {{ $scan->region }} @if($scan->osb) / {{ $scan->osb }} @endif</p><select aria-label="Liste durumu" class="prospect-input" wire:model.live="filter"><option value="">Tüm adresler</option value="review">İnceleme bekleyen</option><option value="approved">Listeye onaylanan</option><option value="excluded">Hariç tutulan</option></select></div>
                 <div class="pr-table-wrap">
                     <table class="prospect-table"><thead><tr><th>Firma / kaynak</th><th>E-posta</th><th>İnceleme</th></tr></thead><tbody>
                         @forelse($contacts as $contact)

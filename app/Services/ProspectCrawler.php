@@ -66,19 +66,42 @@ class ProspectCrawler
         throw new RuntimeException('Çok fazla yönlendirme.');
     }
 
-    public function emails(string $html): array
+    public function emails(string $html, bool $sharedOnly = true): array
     {
         $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $text, $matches);
 
-        return array_values(array_unique(array_filter(array_map('strtolower', $matches[0]), function ($email) {
+        return array_values(array_unique(array_filter(array_map('strtolower', $matches[0]), function ($email) use ($sharedOnly) {
             [$local, $host] = explode('@', $email, 2);
 
             return strlen($email) <= 254 && filter_var($email, FILTER_VALIDATE_EMAIL)
-                && preg_match('/^(info|bilgi|iletisim|contact|sales|satis|export|ihracat|office|ofis|marketing|pazarlama|genel|santral)([._-].*)?$/', $local)
-                && ! in_array($host, ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'example.com'], true)
+                && (! $sharedOnly || preg_match('/^(info|bilgi|iletisim|contact|sales|satis|export|ihracat|office|ofis|marketing|pazarlama|genel|santral)([._-].*)?$/', $local))
+                && (! $sharedOnly || ! in_array($host, ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'example.com'], true))
                 && ! preg_match('/\.(png|jpg|jpeg|gif|webp|svg)$/', $host);
         })));
+    }
+
+    public function siteLinks(string $html, string $base): array
+    {
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $links = [];
+        foreach ($dom->getElementsByTagName('a') as $a) {
+            try {
+                $uri = UriResolver::resolve(new Uri($base), new Uri($a->getAttribute('href')))->withFragment('');
+                if (! in_array($uri->getScheme(), ['http', 'https']) || $uri->getHost() !== parse_url($base, PHP_URL_HOST)
+                    || $uri->getUserInfo() || $uri->getPort() || $uri->getQuery()
+                    || preg_match('/\.(pdf|zip|png|jpe?g|gif|svg|webp|mp4|docx?|xlsx?)$/i', $uri->getPath())) {
+                    continue;
+                }
+                $links[] = (string) $uri;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+        $links = array_values(array_unique($links));
+        usort($links, fn ($a, $b) => (int) preg_match('/contact|iletisim|iletişim/i', $b) <=> (int) preg_match('/contact|iletisim|iletişim/i', $a));
+        return array_slice($links, 0, 20);
     }
 
     public function contactLinks(string $html, string $url): array

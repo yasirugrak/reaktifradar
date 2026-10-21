@@ -25,4 +25,11 @@ class ProspectCrawlerTest extends TestCase
         $this->expectException(\RuntimeException::class);
         (new ProspectCrawler)->publicAddress('file:///etc/passwd');
     }
+
+    public function test_direct_site_mode_collects_published_addresses_and_limits_links(): void
+    {
+        $crawler = new ProspectCrawler;
+        $this->assertSame(['ali@firma.com', 'firma@gmail.com'], $crawler->emails('ali@firma.com firma@gmail.com logo@2x.png', false));
+        $this->assertSame(['https://firma.com/contact', 'https://firma.com/about'], $crawler->siteLinks('<a href="/about">About</a><a href="/contact#form">Contact</a><a href="https://other.test">Other</a><a href="mailto:info@firma.com">Mail</a><a href="/catalog.pdf">PDF</a><a href="/?page=2">Page</a>', 'https://firma.com'));
+    }
 }

@@ -29,6 +29,8 @@ class Prospecting extends Page
 
     public string $provider = 'google';
 
+    public string $sourceUrl = '';
+
     public string $region = '';
 
     public string $osb = '';
@@ -49,13 +51,27 @@ class Prospecting extends Page
     public function start(): void
     {
         abort_unless(static::canAccess(), 403);
-        $this->validate(['provider' => 'required|in:google,serper', 'region' => 'required|string|max:100', 'osb' => 'nullable|string|max:150', 'sector' => 'nullable|string|max:100', 'limit' => 'required|integer|min:10|max:60']);
+        $this->validate(['provider' => 'required|in:google,serper,website', 'sourceUrl' => 'exclude_unless:provider,website|required|url:http,https|max:2048', 'region' => 'exclude_if:provider,website|required|string|max:100', 'osb' => 'nullable|string|max:150', 'sector' => 'nullable|string|max:100', 'limit' => 'required|integer|min:10|max:60']);
         if (! ProspectSearch::configured($this->provider)) {
             Notification::make()->title('Seçilen arama servisinin API ayarlarını tanımlayın.')->warning()->send();
 
             return;
         }
-        $scan = ProspectScan::create(['provider' => $this->provider, 'region' => $this->region, 'osb' => $this->osb, 'sector' => $this->sector, 'limit' => $this->limit]);
+        $direct = $this->provider === 'website';
+        if ($direct) {
+            $parts = parse_url($this->sourceUrl);
+            if (isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
+                $this->addError('sourceUrl', 'Kullanıcı bilgisi veya özel port içermeyen bir web adresi girin.');
+                return;
+            }
+        }
+        $host = $direct ? parse_url($this->sourceUrl, PHP_URL_HOST) : null;
+        $scan = ProspectScan::create([
+            'provider' => $this->provider, 'source_url' => $direct ? $this->sourceUrl : null,
+            'region' => $direct ? $host : $this->region, 'osb' => $direct ? null : $this->osb,
+            'sector' => $direct ? null : $this->sector, 'limit' => $direct ? 20 : $this->limit,
+            'candidates' => $direct ? [['url' => $this->sourceUrl, 'company' => $host]] : null,
+        ]);
         RunProspectScan::dispatch($scan->id);
         $this->scanId = $scan->id;
         $this->resetPage();
@@ -92,6 +108,7 @@ class Prospecting extends Page
             return;
         }
         $this->provider = $scan->provider ?? 'google';
+        $this->sourceUrl = $scan->source_url ?? '';
         $this->region = $scan->region;
         $this->osb = $scan->osb ?? '';
         $this->sector = $scan->sector ?? '';

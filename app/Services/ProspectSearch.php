@@ -13,6 +13,7 @@ class ProspectSearch
     public static function configured(string $provider): bool
     {
         return match ($provider) {
+            'website' => true,
             'serper' => (bool) config('prospecting.serper_key'),
             'google' => (bool) (config('prospecting.google_key') && config('prospecting.google_cx')),
             default => false,

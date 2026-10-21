@@ -30,6 +30,10 @@ class RunProspectScan implements ShouldQueue
         if (! $scan || in_array($scan->status, ['cancelled', 'completed', 'failed'])) {
             return;
         }
+        $direct = $scan->provider === 'website';
+        if ($direct) {
+            $scan->update(['status' => 'running']);
+        }
         if ($scan->candidates === null) {
             $scan->update(['status' => 'running']);
             $candidates = $search->discover($scan);
@@ -43,7 +47,21 @@ class RunProspectScan implements ShouldQueue
                 try {
                     $html = $crawler->fetch($candidate['url']);
                     $pages = [$candidate['url'] => $html];
-                    foreach ($crawler->contactLinks($html, $candidate['url']) as $link) {
+                    if ($direct) {
+                        $candidates = $scan->candidates;
+                        $known = array_column($candidates, 'url');
+                        foreach ($crawler->siteLinks($html, $candidate['url']) as $link) {
+                            if (count($candidates) >= 20) {
+                                break;
+                            }
+                            if (! in_array($link, $known, true)) {
+                                $candidates[] = ['url' => $link, 'company' => $candidate['company']];
+                                $known[] = $link;
+                            }
+                        }
+                        $scan->update(['candidates' => $candidates]);
+                    }
+                    foreach (($direct ? [] : $crawler->contactLinks($html, $candidate['url'])) as $link) {
                         try {
                             $pages[$link] = $crawler->fetch($link);
                         } catch (Throwable) {
@@ -54,7 +72,7 @@ class RunProspectScan implements ShouldQueue
                         if (in_array($scan->fresh()?->status, [null, 'cancelled'], true)) {
                             return;
                         }
-                        foreach ($crawler->emails($body) as $email) {
+                        foreach ($crawler->emails($body, ! $direct) as $email) {
                             ProspectContact::firstOrCreate(['prospect_scan_id' => $scan->id, 'email' => $email], ['company' => $candidate['company'], 'source_url' => $source]);
                         }
                     }
