@@ -6,6 +6,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\EnerjisaAdmin;
 use App\Filament\Pages\Prospecting;
+use App\Filament\Pages\IntroductionMail;
 use App\Filament\Resources\CallbackRequestResource;
 use App\Filament\Resources\EnerjisaAccountResource;
 use App\Filament\Resources\EnerjisaMemberResource;
@@ -50,6 +51,7 @@ final class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
                 EnerjisaAdmin::class,
                 Prospecting::class,
+                IntroductionMail::class,
             ])
             ->widgets([])
             ->sidebarCollapsibleOnDesktop()
