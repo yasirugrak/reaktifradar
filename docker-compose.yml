@@ -1,6 +1,6 @@
 name: reaktifradar
 
-# Uygulama ve zamanlayıcı aynı kodu ve imajı kullanır.
+# Uygulama, zamanlayıcı ve kuyruk işçisi aynı kodu ve imajı kullanır.
 # PostgreSQL, Redis ve nginx burada tekrar oluşturulmaz.
 x-app: &app
   image: reaktifradar/app:prod
@@ -37,6 +37,17 @@ services:
   app:
     <<: *app
     container_name: reaktifradar-app
+    networks:
+      - shared
+      - internal
+
+  # Firma keşfi açıkça database bağlantısını kullanır.
+  # Kuyruk adı Laravel'in DB_QUEUE ayarından okunur; varsayılan default'tur.
+  worker:
+    <<: *app
+    container_name: reaktifradar-worker
+    command: php artisan queue:work database --sleep=2 --timeout=60 --tries=1 --max-time=3600
+    stop_grace_period: 75s
     networks:
       - shared
       - internal

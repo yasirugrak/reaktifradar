@@ -5,7 +5,7 @@ Reaktif enerji takibi, tesisat yönetimi ve e-posta/Telegram raporları. Bağım
 - Canlı adres: `https://reaktifradar.com` (kök adres pazarlama sayfasıdır).
 - Müşteri paneli: `/panel`; sistem yönetimi: `/admin`.
 - Mevcut PostgreSQL 16 servisi kullanılır; veritabanı `reaktifradar` olur.
-- Ayrı uygulama anahtarı, oturum çerezi ve Redis anahtar öneki ve Redis database numaraları kullanılır. PostgreSQL ve Redis servisleri OkuKid ile ortaktır. Kuyruk işleri şu an senkron yürür.
+- Ayrı uygulama anahtarı, oturum çerezi ve Redis anahtar öneki ve Redis database numaraları kullanılır. PostgreSQL ve Redis servisleri OkuKid ile ortaktır. Varsayılan işler senkron yürür; firma keşfi database kuyruğunda ayrı worker servisiyle çalışır.
 - Bildirim servisi ilk kurulumda kapalıdır; taşınma tamamlanmadan açılmaz.
 - Enerjisa servisinin kendi adı ve uyumluluk için mevcut rota/tablo adları korunmuştur.
 
@@ -65,7 +65,10 @@ Eski `/enerjisa` GET bağlantıları sorgu parametreleri korunarak `/panel` adre
 
 1. `php artisan migrate --force` ile tabloları oluşturun.
 2. `.env` içine `GOOGLE_SEARCH_API_KEY` ve `GOOGLE_SEARCH_ENGINE_ID` (cx) ekleyin, config cache kullanılıyorsa `php artisan config:cache` çalıştırın.
-3. `php artisan queue:restart` ile mevcut işçileri yeniden başlatın. `php artisan queue:work database --queue=default --timeout=60 --tries=1` işçisini sürekli çalıştırın (Supervisor veya container).
+3. Docker kurulumunda `docker compose up -d worker` ile kalıcı kuyruk işçisini başlatın. Servis yeniden başlatmalarda otomatik açılır. Docker kullanılmıyorsa `php artisan queue:work database --sleep=2 --timeout=60 --tries=1` komutunu Supervisor ile sürekli çalıştırın. Kuyruk adı `DB_QUEUE` ayarından okunur (varsayılan: `default`).
+4. Kod veya API ayarı değiştiğinde `docker compose exec app php artisan config:cache` ve `docker compose restart worker` çalıştırın.
+
+Tarama “Tarama işçisi bekleniyor” durumunda kalırsa `docker compose ps worker` ve `docker compose logs --tail=50 worker` ile işçiyi kontrol edin. `queue:restart` tek başına yeni bir işçi başlatmaz. İşçi açılınca kuyrukta bekleyen taramalar otomatik işlenir; aynı taramayı tekrar oluşturmanız gerekmez.
 
 İl/bölge, OSB adı ve sektörle Google Custom Search JSON API ile web araması yapılır. Sonuç başlıkları firma adayıdır; firma büyüklüğü ve OSB üyeliği manuel doğrulanmalıdır. En fazla 60 aday site, her sitede en fazla iki sayfa okunur. Genel kurumsal adresler alınır; kişisel adresler tahmin edilmez. Aynı taramadaki mükerrer e-postalar tekilleştirilir. Taramalar arasında aynı adres tekrar bulunabilir.
 
