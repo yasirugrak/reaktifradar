@@ -33,7 +33,7 @@ class RunProspectScan implements ShouldQueue
         if ($scan->candidates === null) {
             $scan->update(['status' => 'running']);
             $candidates = $search->discover($scan);
-            if ($scan->fresh()->status === 'cancelled') {
+            if (in_array($scan->fresh()?->status, [null, 'cancelled'], true)) {
                 return;
             }
             $scan->update(['candidates' => $candidates]);
@@ -51,7 +51,7 @@ class RunProspectScan implements ShouldQueue
                         }
                     }
                     foreach ($pages as $source => $body) {
-                        if ($scan->fresh()->status === 'cancelled') {
+                        if (in_array($scan->fresh()?->status, [null, 'cancelled'], true)) {
                             return;
                         }
                         foreach ($crawler->emails($body) as $email) {
@@ -64,7 +64,7 @@ class RunProspectScan implements ShouldQueue
                 $scan->increment('processed');
             }
         }
-        if ($scan->fresh()->status === 'cancelled') {
+        if (in_array($scan->fresh()?->status, [null, 'cancelled'], true)) {
             return;
         }
         if ($scan->processed >= count($scan->candidates ?? [])) {

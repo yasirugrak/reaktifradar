@@ -49,6 +49,12 @@
                 <div class="prospect-actions" style="justify-content:space-between;margin-bottom:16px">
                     <div><span class="pr-badge {{ $scan->status }}">{{ $labels[$scan->status] ?? $scan->status }}</span><p class="prospect-muted">{{ $scan->processed }} / {{ count($scan->candidates ?? []) }} site · {{ $total }} adres · {{ $scan->errors }} okunamayan sayfa</p></div>
                     @if(in_array($scan->status, ['queued','running'])) <x-filament::button color="gray" wire:click="cancel">Durdur</x-filament::button> @endif
+                    @unless(in_array($scan->status, ['queued', 'running']))
+                        <x-filament::button color="gray" wire:click="restartScan({{ $scan->id }})" wire:confirm="Aynı ayarlarla yeni bir tarama başlatılsın mı? Mevcut sonuçlar korunacak ve Google arama kotası kullanılacak." :disabled="!$ready" wire:loading.attr="disabled">Yeniden başlat</x-filament::button>
+                        <x-filament::button color="danger" wire:click="deleteScan({{ $scan->id }})" wire:confirm="Bu tarama ve onaylananlar dahil tüm adresleri kalıcı olarak silinecek. Devam edilsin mi?" wire:loading.attr="disabled">Sil</x-filament::button>
+                    @else
+                        <span class="prospect-muted">Yeniden başlatmak veya silmek için önce durdurun.</span>
+                    @endunless
                     <x-filament::button wire:click="export" :disabled="$approvedCount === 0" wire:loading.attr="disabled" wire:target="export">Onaylananları CSV indir</x-filament::button>
                 </div>
                 <div class="pr-progress" role="progressbar" aria-label="Tarama ilerlemesi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}"><div style="width:{{ $scan->status === 'completed' ? 100 : round(100 * $scan->processed / max(1, count($scan->candidates ?? []))) }}%"></div></div>

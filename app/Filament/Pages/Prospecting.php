@@ -76,6 +76,41 @@ class Prospecting extends Page
         ProspectContact::where('prospect_scan_id', $this->scanId)->findOrFail($id)->update(['status' => $status]);
     }
 
+    public function restartScan(int $id): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $scan = ProspectScan::findOrFail($id);
+        if (in_array($scan->status, ['queued', 'running'])) {
+            Notification::make()->title('Önce devam eden taramayı durdurun.')->warning()->send();
+
+            return;
+        }
+        $this->region = $scan->region;
+        $this->osb = $scan->osb ?? '';
+        $this->sector = $scan->sector ?? '';
+        $this->limit = $scan->limit;
+        $this->filter = '';
+        $this->start();
+    }
+
+    public function deleteScan(int $id): void
+    {
+        abort_unless(static::canAccess(), 403);
+        $scan = ProspectScan::findOrFail($id);
+        if (in_array($scan->status, ['queued', 'running'])) {
+            Notification::make()->title('Silmeden önce taramayı durdurun.')->warning()->send();
+
+            return;
+        }
+        $scan->delete();
+        if ($this->scanId === $id) {
+            $this->scanId = null;
+            $this->filter = '';
+            $this->resetPage();
+        }
+        Notification::make()->title('Tarama ve bu taramaya ait adresler silindi.')->success()->send();
+    }
+
     public function updatedFilter(): void
     {
         $this->resetPage();

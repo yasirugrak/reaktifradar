@@ -34,6 +34,18 @@ class ProspectingTest extends TestCase
         $page->call('review', $contact->id, 'approved')->assertHasNoErrors()->call('export')->assertFileDownloaded('firma-eposta-'.$scan->id.'.csv');
         $page->call('cancel');
         $this->assertSame('cancelled', $scan->fresh()->status);
+        $page->call('restartScan', $scan->id)->assertHasNoErrors();
+        $newScan = ProspectScan::latest('id')->firstOrFail();
+        $this->assertNotSame($scan->id, $newScan->id);
+        $this->assertSame($scan->region, $newScan->region);
+        $this->assertSame($scan->osb, $newScan->osb);
+        Queue::assertPushed(RunProspectScan::class, fn ($job) => $job->scanId === $newScan->id);
+        $page->call('deleteScan', $newScan->id);
+        $this->assertModelExists($newScan);
+        $page->call('selectScan', $scan->id)->call('deleteScan', $scan->id)->assertSet('scanId', null);
+        $this->assertModelMissing($scan);
+        $this->assertModelMissing($contact);
+
         $this->actingAs(User::factory()->create(['role' => PanelRole::Support]));
         $this->get(Prospecting::getUrl())->assertForbidden();
     }
