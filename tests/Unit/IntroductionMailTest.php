@@ -17,7 +17,7 @@ class IntroductionMailTest extends TestCase
         $mail = new ProspectingIntroduction;
         $mail->assertSeeInHtml('ReaktifRadar');
         $mail->assertSeeInHtml('https://reaktifradar.com/#iletisim');
-        $mail->assertSeeInText('Günlük rapor');
+        $mail->assertSeeInText('Teknik bilgi sahibi olmanız gerekmez.');
         $this->assertStringStartsWith('[TEST]', $mail->envelope()->subject);
     }
 

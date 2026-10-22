@@ -8,7 +8,7 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class ProspectingIntroduction extends Mailable
 {
-    public const SUBJECT = 'Reaktif ceza riskini faturadan önce fark edin';
+    public const SUBJECT = 'Enerjisa faturanızda ceza sürprizi yaşamayın';
 
     public function __construct(public bool $test = true) {}
 

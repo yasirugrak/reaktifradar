@@ -1,16 +1,16 @@
-ReaktifRadar — Reaktif cezayı faturada görmeden önlem alın.
+ReaktifRadar — Enerjisa faturanızda ceza sürprizi yaşamayın.
 
 Merhaba,
 
-Tesisinizdeki reaktif enerji değerlerini düzenli takip etmek, kompanzasyon sorunlarını fark etmenize ve beklenmedik maliyetlere karşı zamanında adım atmanıza yardımcı olur.
+İşletmenizin elektrik sistemindeki bazı sorunlar, Enerjisa faturanıza “reaktif bedel” adıyla ek ücret yansıyabilmesine yol açabilir. Bu ücret, günlük dilde elektrik cezası olarak bilinir.
 
-ReaktifRadar olarak bu süreci mühendis takibi, anlaşılır raporlar ve riskli değerlerde ek uyarılarla destekliyoruz.
+ReaktifRadar, elektrik verilerinizi takip eder ve ceza riski gördüğünde sizi bilgilendirir. Böylece elektrikçinizle görüşüp sorunu gidermek için zamanında adım atabilirsiniz.
 
-• Düzenli takip: Endüktif ve kapasitif oranların mühendisimizle değerlendirilmesi.
-• Günlük rapor ve ek uyarılar: Tesisinizin durumunun e-posta ve Telegram üzerinden paylaşılması.
-• Bir sonraki adımın planlanması: Sorun tespitinde yapılacak müdahalenin birlikte değerlendirilmesi.
+• Düzenli takip: Mühendisimiz, elektrik verilerinizi ceza riski açısından inceler.
+• Anlaşılır bilgi ve uyarılar: Durumunuzu her gün e-posta ve Telegram ile paylaşır, risk gördüğümüzde ek uyarı göndeririz.
+• Ne yapacağınızı birlikte konuşalım: Bir sorun varsa elektrikçinizle hangi adımları atabileceğinizi açıklarız.
 
-Tesisinizin mevcut durumunu ve takip ihtiyacını kısa bir görüşmede konuşalım. Web sitemizden numaranızı bırakın, sizi arayalım:
+Teknik bilgi sahibi olmanız gerekmez. Web sitemizden telefon numaranızı bırakın; sizi arayıp işletmeniz için nasıl yardımcı olabileceğimizi anlatalım:
 {{ $website }}/#iletisim
 
 İyi çalışmalar,
@@ -20,4 +20,4 @@ ReaktifRadar Ekibi
 @if($test)
 Bu ileti, tanıtım şablonunu kontrol etmeniz için gönderilen test e-postasıdır.
 @endif
-Takip sıklığı ve veri güncelliği ölçüm kaynağına bağlıdır. Hizmet kapsamı ilk görüşmede netleştirilir.
+Takip, erişebildiğimiz elektrik verilerine dayanır. Hizmetin ayrıntılarını ilk görüşmede birlikte netleştiririz.
