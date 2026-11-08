@@ -16,3 +16,5 @@ Route::post('/enerjisa/telegram/webhook', TelegramWebhookController::class);
 Route::get('/enerjisa/{path?}', function (Request $request, string $path = '') {
     return redirect('/panel'.($path !== '' ? '/'.$path : '').($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301);
 })->where('path', '.*');
+
+require __DIR__."/accounting.php";

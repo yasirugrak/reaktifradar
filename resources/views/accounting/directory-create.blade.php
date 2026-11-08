@@ -1,0 +1,5 @@
+@extends('accounting.layout')
+@section('content')
+<a href="/muhasebe/rehber">← Rehbere dön</a><h1>Yeni kayıt</h1><p>Bir kez ekleyin, tüm işlemlerinizde arayıp seçin.</p>
+<section style="max-width:680px"><form method="post" action="/muhasebe/directory">@csrf<label for="kind">Ne eklemek istiyorsunuz?</label><select name="kind" id="kind">@foreach(['person'=>'Kişi','company'=>'Kurum'] as $key=>$label)<option value="{{$key}}" @selected(old('kind')===$key)>{{$label}}</option>@endforeach</select><label for="name">Ad / unvan</label><input id="name" name="name" value="{{old('name')}}" maxlength="160" required autofocus placeholder="Örn. Ayşe Yılmaz veya Atlas Teknoloji">@include('accounting.tag-field',['tagValue'=>isset($profile)?implode(', ',json_decode($profile->tags??'[]',true)):''])@include('accounting.company-fields',['profile'=>null])<p><small>Aynı türde ve aynı isimde mevcut kayıt varsa tekrar oluşturulmaz.</small></p><div class="row"><a href="/muhasebe/rehber">Vazgeç</a><button>Rehbere ekle</button></div></form></section>
+@endsection

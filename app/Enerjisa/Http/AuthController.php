@@ -29,6 +29,10 @@ class AuthController
         $request->session()->regenerate();
         $request->session()->put('enerjisa_password_hash.'.$member->id, $member->password);
 
+        if ($request->session()->pull('accounting_after_login', false)) {
+            return redirect('/muhasebe');
+        }
+
         return redirect()->route('enerjisa.dashboard');
     }
 

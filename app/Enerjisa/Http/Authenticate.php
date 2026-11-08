@@ -13,6 +13,9 @@ class Authenticate
     public function handle(Request $request, Closure $next): Response
     {
         if (! Auth::guard('enerjisa')->check()) {
+            if ($request->is('muhasebe*')) {
+                $request->session()->put('accounting_after_login', true);
+            }
             return redirect()->route('enerjisa.login');
         }
 
