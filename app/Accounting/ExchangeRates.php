@@ -8,9 +8,27 @@ class ExchangeRates
 {
     public function latest(): array
     {
+        $result=$this->forex();
+        foreach($result['rates'] as &$rate){$rate['source']='TCMB';$rate['date']=$result['date'];$rate['stale']=$result['stale'];}unset($rate);
+        $gold=Cache::remember('accounting.gold.refresh',900,function(){
+            try {
+                $data=Http::connectTimeout(4)->timeout(10)->get('https://finans.truncgil.com/today.json')->throw()->json();
+                $parse=fn($value)=>(float)str_replace(',','.',str_replace('.','',(string)$value));
+                $buy=$parse($data['gram-altin']['Alış']??'');$sell=$parse($data['gram-altin']['Satış']??'');
+                if($buy<=0||$sell<=0||empty($data['Update_Date']))throw new \RuntimeException('Invalid gold rate');
+                $rate=['buy'=>$buy,'sell'=>$sell,'date'=>$data['Update_Date'],'source'=>'Truncgil · gram altın','stale'=>false];
+                Cache::put('accounting.gold.last',$rate,now()->addDays(30));return $rate;
+            }catch(\Throwable $e){$last=Cache::get('accounting.gold.last');return $last?array_merge($last,['stale'=>true]):[];}
+        });
+        if($gold)$result['rates']['XAU']=$gold;
+        return $result;
+    }
+
+    private function forex(): array
+    {
         return Cache::remember('accounting.rates.refresh', 900, function () {
             try {
-                $body = Http::connectTimeout(2)->timeout(5)->get('https://www.tcmb.gov.tr/kurlar/today.xml')->throw()->body();
+                $body = Http::connectTimeout(4)->timeout(10)->get('https://www.tcmb.gov.tr/kurlar/today.xml')->throw()->body();
                 if (str_contains(strtoupper($body), '<!DOCTYPE')) {
                     throw new \RuntimeException('Unexpected XML document');
                 }

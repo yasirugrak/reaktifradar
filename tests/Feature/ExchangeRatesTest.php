@@ -7,17 +7,18 @@ use Tests\TestCase;
 class ExchangeRatesTest extends TestCase {
  public function test_rates_are_cached_and_retained_when_source_fails(): void {
  Cache::flush();
- Http::fake(['*'=>Http::sequence()->push('<Tarih_Date Tarih="06.11.2026"><Currency CurrencyCode="USD"><Unit>1</Unit><ForexBuying>42.50</ForexBuying><ForexSelling>42.60</ForexSelling></Currency><Currency CurrencyCode="EUR"><Unit>1</Unit><ForexBuying>49.10</ForexBuying><ForexSelling>49.20</ForexSelling></Currency></Tarih_Date>')->push('',503)]);
+ Http::fake(['https://finans.truncgil.com/*'=>Http::response(['Update_Date'=>'2026-11-08 12:00:00','gram-altin'=>['Alış'=>'6.555,36','Satış'=>'6.556,39']]),'https://www.tcmb.gov.tr/*'=>Http::sequence()->push('<Tarih_Date Tarih="06.11.2026"><Currency CurrencyCode="USD"><Unit>1</Unit><ForexBuying>42.50</ForexBuying><ForexSelling>42.60</ForexSelling></Currency><Currency CurrencyCode="EUR"><Unit>1</Unit><ForexBuying>49.10</ForexBuying><ForexSelling>49.20</ForexSelling></Currency></Tarih_Date>')->push('',503)]);
  $service=new ExchangeRates;
  $data=$service->latest();
  $this->assertSame(42.5,$data['rates']['USD']['buy']);
  $this->assertSame('06.11.2026',$data['date']);
  $this->assertFalse($data['stale']);
- $service->latest(); Http::assertSentCount(1);
+ $this->assertSame(6556.39,$data['rates']['XAU']['sell']);
+ $service->latest(); Http::assertSentCount(2);
  Cache::forget('accounting.rates.refresh');
 
  $fallback=$service->latest();
  $this->assertTrue($fallback['stale']);
- $this->assertSame($data['rates'],$fallback['rates']);
+ $this->assertSame($data['rates']['USD']['sell'],$fallback['rates']['USD']['sell']);
  }
 }
