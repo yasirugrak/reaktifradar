@@ -4,7 +4,7 @@
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReaktifRadar — Reaktif ceza riskini azaltın, bütçenizi koruyun</title>
     <meta name="description" content="Reaktif ceza riskine karşı önlem alın. Mühendis takibi, günlük rapor ve sorunlarda ek uyarılarla tesisinizin reaktif enerji değerlerini kontrol altında tutmanıza yardımcı oluyoruz.">
-    <link rel="stylesheet" href="{{ asset('css/landing.css') }}?v=service-2">
+    <link rel="stylesheet" href="{{ asset('css/landing.css') }}?v={{ substr(hash_file('sha256', public_path('css/landing.css')), 0, 12) }}">
 </head>
 <body>
 @php

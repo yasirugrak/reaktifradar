@@ -72,7 +72,7 @@ class AccountingTest extends TestCase {
  $this->get('/muhasebe')->assertOk()->assertDontSee('TKL-');
  $this->get('/muhasebe/teklifler')->assertOk()->assertSee('Yeni teklif');
  $this->get('/muhasebe/teklifler?view=list')->assertOk()->assertSee('TKL-')->assertDontSee('id="items"',false);
- $this->get('/muhasebe/rehber')->assertOk()->assertSee('Ada')->assertSee('60,25')->assertSee('Alacak');
+ $this->get('/muhasebe/rehber')->assertOk()->assertSee('Ada')->assertSee('60,25')->assertSee('Alacak')->assertSee('Genel cari toplam');
  $this->getJson('/muhasebe/rehber?q=Ada')->assertOk()->assertJsonPath('total',1)->assertJsonStructure(['html','total']);
  $this->getJson('/muhasebe/rehber?q=bulunmayan')->assertOk()->assertJsonPath('total',0);
  $this->get('/muhasebe')->assertOk()->assertSee('Cari hesaplar')->assertDontSee('id="transactions"',false);

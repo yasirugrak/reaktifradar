@@ -14,13 +14,14 @@ class DirectoryController {
  $today=now('Europe/Istanbul')->toDateString();
  $soon=now('Europe/Istanbul')->addDays(7)->toDateString();
  $dueItems=DB::table('accounting_entries as e')->leftJoinSub($payments,'p','p.entry_id','=','e.id')->where('e.member_id',Auth::guard('enerjisa')->id())->whereNull('e.deleted_at')->whereIn('e.type',['receivable','debt'])->whereNotNull('e.directory_id')->whereNotNull('e.due')->where('e.due','<=',$soon)->whereRaw('e.amount > COALESCE(p.paid,0)')->select('e.directory_id','e.type','e.due')->get()->groupBy('directory_id');
+ $generalBalances=$balances->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>$rows->sum('receivable'),'debt'=>$rows->sum('debt')]);
  $allRecords=$query->orderBy('name')->get();
  foreach($allRecords as $record){$record->balances=$balances->get($record->id,collect());$record->due_alerts=$dueItems->get($record->id,collect())->groupBy(fn($item)=>($item->due<$today?'overdue':'upcoming').':'.$item->type)->map(fn($items)=>['count'=>$items->count(),'date'=>$items->min('due')]);$record->has_open_balance=$record->balances->contains(fn($balance)=>(int)$balance->receivable>0||(int)$balance->debt>0);}
  $allRecords=$allRecords->sortByDesc('has_open_balance')->values();
  $page=max(1,(int)$request->input('page',1));
  $records=new \Illuminate\Pagination\LengthAwarePaginator($allRecords->forPage($page,20)->values(),$allRecords->count(),20,$page,['path'=>$request->url(),'query'=>$request->except('page')]);
- if($request->expectsJson())return response()->json(['html'=>view('accounting.directory-results',compact('records'))->render(),'total'=>$records->total()]);
- return view('accounting.directory',compact('records'));
+ if($request->expectsJson())return response()->json(['html'=>view('accounting.directory-results',compact('records','generalBalances'))->render(),'total'=>$records->total()]);
+ return view('accounting.directory',compact('records','generalBalances'));
  }
  public function create() { return view('accounting.directory-create'); }
  public function edit(int $id) { $profile=Contact::query()->where('member_id',Auth::guard('enerjisa')->id())->where('id',$id)->first(); abort_unless($profile,404); return view('accounting.directory-edit',compact('profile')); }
