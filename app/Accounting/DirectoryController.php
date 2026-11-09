@@ -7,9 +7,19 @@ class DirectoryController {
  public function index(Request $request) {
  $data=$request->validate(['kind'=>'nullable|in:person,company','q'=>'nullable|string|max:160']);
  $query=Contact::query()->where('member_id',Auth::guard('enerjisa')->id());
- if(!empty($data['kind'])) $query->where('kind',$data['kind']);
+ if(!empty($data['kind']))$query->where('kind',$data['kind']);
  if(!empty($data['q'])) $query->whereRaw('strpos(normalized_name, ?) > 0',[mb_strtolower(trim($data['q']))]);
- $records=$query->orderBy('name')->paginate(20)->withQueryString();
+ $payments=DB::table('accounting_payments')->select('entry_id')->selectRaw('SUM(amount) AS paid')->groupBy('entry_id');
+ $balances=DB::table('accounting_entries as e')->leftJoinSub($payments,'p','p.entry_id','=','e.id')->where('e.member_id',Auth::guard('enerjisa')->id())->whereNull('e.deleted_at')->whereNotNull('e.directory_id')->whereIn('e.type',['receivable','debt'])->select('e.directory_id','e.currency')->selectRaw("SUM(CASE WHEN e.type = 'receivable' THEN e.amount - COALESCE(p.paid,0) ELSE 0 END) AS receivable, SUM(CASE WHEN e.type = 'debt' THEN e.amount - COALESCE(p.paid,0) ELSE 0 END) AS debt")->groupBy('e.directory_id','e.currency')->get()->groupBy('directory_id');
+ $today=now('Europe/Istanbul')->toDateString();
+ $soon=now('Europe/Istanbul')->addDays(7)->toDateString();
+ $dueItems=DB::table('accounting_entries as e')->leftJoinSub($payments,'p','p.entry_id','=','e.id')->where('e.member_id',Auth::guard('enerjisa')->id())->whereNull('e.deleted_at')->whereIn('e.type',['receivable','debt'])->whereNotNull('e.directory_id')->whereNotNull('e.due')->where('e.due','<=',$soon)->whereRaw('e.amount > COALESCE(p.paid,0)')->select('e.directory_id','e.type','e.due')->get()->groupBy('directory_id');
+ $allRecords=$query->orderBy('name')->get();
+ foreach($allRecords as $record){$record->balances=$balances->get($record->id,collect());$record->due_alerts=$dueItems->get($record->id,collect())->groupBy(fn($item)=>($item->due<$today?'overdue':'upcoming').':'.$item->type)->map(fn($items)=>['count'=>$items->count(),'date'=>$items->min('due')]);$record->has_open_balance=$record->balances->contains(fn($balance)=>(int)$balance->receivable>0||(int)$balance->debt>0);}
+ $allRecords=$allRecords->sortByDesc('has_open_balance')->values();
+ $page=max(1,(int)$request->input('page',1));
+ $records=new \Illuminate\Pagination\LengthAwarePaginator($allRecords->forPage($page,20)->values(),$allRecords->count(),20,$page,['path'=>$request->url(),'query'=>$request->except('page')]);
+ if($request->expectsJson())return response()->json(['html'=>view('accounting.directory-results',compact('records'))->render(),'total'=>$records->total()]);
  return view('accounting.directory',compact('records'));
  }
  public function create() { return view('accounting.directory-create'); }
@@ -29,8 +39,9 @@ class DirectoryController {
  return redirect($returnTo==='transactions'?'/muhasebe#transactions':'/muhasebe/rehber/'.$id.'/duzenle')->with('success','Değişiklikler kaydedildi.');
  }
  public function search(Request $request) {
- $data=$request->validate(['kind'=>'required|in:person,company','q'=>'nullable|string|max:160']);
- $query=Contact::query()->where('member_id',Auth::guard('enerjisa')->id())->where('kind',$data['kind']);
+ $data=$request->validate(['kind'=>'nullable|in:person,company','q'=>'nullable|string|max:160']);
+ $query=Contact::query()->where('member_id',Auth::guard('enerjisa')->id());
+ if(!empty($data['kind']))$query->where('kind',$data['kind']);
  if(!empty($data['q'])) $query->whereRaw('strpos(normalized_name, ?) > 0',[mb_strtolower(trim($data['q']))]);
  return response()->json($query->orderBy('name')->limit(20)->get(['id','name','kind']));
  }

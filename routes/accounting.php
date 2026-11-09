@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Route;
 use App\Accounting\Controller;
 Route::prefix('muhasebe')->middleware(\App\Enerjisa\Http\Authenticate::class)->group(function() {
  Route::get('/urunler',[\App\Accounting\CatalogController::class,'index']);
+ Route::get('/urunler/{id}/data',[\App\Accounting\CatalogController::class,'data'])->whereNumber('id');
  Route::get('/urunler/ekle',[\App\Accounting\CatalogController::class,'edit']);
  Route::get('/urunler/{id}/duzenle',[\App\Accounting\CatalogController::class,'edit'])->whereNumber('id');
  Route::post('/urunler',[\App\Accounting\CatalogController::class,'save']);
@@ -18,6 +19,8 @@ Route::prefix('muhasebe')->middleware(\App\Enerjisa\Http\Authenticate::class)->g
  Route::post('/rehber/{id}',[\App\Accounting\DirectoryController::class,'update'])->whereNumber('id');
  Route::get('/rehber/ekle',[\App\Accounting\DirectoryController::class,'create']);
  Route::get('/',[Controller::class,'index']);
+ Route::post('/entries/{id}/amount',[Controller::class,'updateAmount'])->whereNumber('id');
+ Route::post('/entries/{id}/edit',[Controller::class,'updateEntry'])->whereNumber('id');
  Route::post('/entries/{id}/tags',[Controller::class,'tags'])->whereNumber('id');
  Route::delete('/entries/{id}',[Controller::class,'delete'])->whereNumber('id');
  Route::post('/entries/{id}/restore',[Controller::class,'restore'])->whereNumber('id');
