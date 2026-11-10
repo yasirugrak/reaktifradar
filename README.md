@@ -94,3 +94,31 @@ Firma keşfinde **Web sitesi bağlantısı** yöntemini seçip HTTP/HTTPS adresi
 
 ### Ortak e-posta havuzu
 Firma E-posta Keşfi sayfası varsayılan olarak tüm taramaların ortak havuzunu açar. Sonuçlar otomatik olarak `LOWER(TRIM(email))` ile tekilleştirilir; kaynak tarama kayıtları korunur. Çelişen durumlarda hariç tutma, ardından onay önceliklidir. Havuzdan tek adresin durumunu değiştirmek aynı adresin tüm tarama kayıtlarını günceller. Tümünü onayla yalnızca havuzdaki bekleyen adresleri onaylar. Toplu mail gönderimi tüm havuzdaki onaylı ve daha önce gönderim kaydı oluşturulmamış adreslere uygulanır; CSV de tekilleştirilmiştir. Havuz kaynak kayıtların canlı görünümüdür: tarama silinirse yalnızca o taramada bulunan adresler havuzdan da çıkar. Gönderim geçmişi korunur. Yeni migration gerekmez; kod güncellemesinden sonra view:clear ve worker yeniden başlatma yeterlidir.
+
+## Hesapça: bağımsız tahsilatlar ve cari hatırlatmalar
+
+Yeni modelde `receipt` (tahsilat) ayrı işlem satırıdır. Cari bakiye, para birimi bazında
+`alacak + ödeme − tahsilat − borç` olarak hesaplanır. Gelir/gider kayıtları nakit
+hareketidir ve ayrıca cari yaratmaz. Sadece alacak/tahsilat kullanılan hesaplarda
+bu formül doğrudan `alacak − tahsilat` olur. Bir alacağı silmek tahsilatlarını silmez.
+
+`2026_11_10_000001_independent_receipts` migration'ından önce veritabanı yedeği alın.
+Migration eski bağlı ödemeleri bağımsız tahsilat/ödeme satırlarına kopyalar, eski
+ödeme tablolarını denetim geçmişi olarak korur. Fazla tahsilat kaynaklı borç satırını
+aynı tutarda tahsilata dönüştürür. Çift sayımı önlemek için yeni hesaplamalar sadece
+işlem tablosunu kullanır. Bu veri dönüşümünün otomatik geri alma işlemi yoktur.
+Migration sırasında uygulamayı bakım moduna alın; işlem yazan eski worker'ları durdurun.
+Migration sonrası kodu ve zamanlayıcıyı birlikte güncelleyin.
+
+Kişinin hesabındaki **Hatırlat** düğmesi ilk tarihi belirler. İstanbul saatiyle
+09.00 itibarıyla açık bakiye varsa giriş yapan üyeye ait e-posta adresine bildirim
+gönderilir. Başarılı gönderimden 7 gün sonra bakiye yeniden hesaplanır; tüm para
+birimleri sıfırlandığında hatırlatma kapanır. Farklı para birimleri birbirine mahsup
+edilmez. İptal edilebilir; kapanmış hatırlatma yeniden tarih seçilerek başlatılabilir.
+SMTP hatasında teslim belirsizliğini önlemek için otomatik tekrar yapılmaz, hata
+hatırlatma ekranında görünür. Kontrol sonrası yeniden kaydedilebilir.
+
+Canlıda merkezi SMTP ayarları ve `scheduler` servisi çalışmalıdır. Görev:
+`php artisan accounting:remind` (zamanlayıcı her dakika çalıştırır).
+Yerel `compose.local.yml` artık zamanlayıcıyı da başlatır; `MAIL_MAILER=log`
+nedeniyle yerelde e-postalar dışarı gönderilmez, uygulama günlüğüne yazılır.

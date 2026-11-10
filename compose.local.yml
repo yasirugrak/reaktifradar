@@ -12,7 +12,7 @@ services:
       test: [CMD-SHELL, 'pg_isready -U radar -d reaktifradar']
       interval: 2s
       retries: 20
-  app:
+  app: &local-app
     image: reaktifradar/app:local
     working_dir: /var/www/html/reaktifradar
     volumes:
@@ -32,10 +32,16 @@ services:
       CACHE_STORE: file
       SESSION_DRIVER: file
       SESSION_SECURE_COOKIE: 'false'
+      REAKTIFRADAR_NOTIFICATIONS_ENABLED: 'false'
       MAIL_MAILER: log
       QUEUE_CONNECTION: sync
     depends_on:
       db:
         condition: service_healthy
+  scheduler:
+    <<: *local-app
+    ports: []
+    command: php artisan schedule:work
+    restart: unless-stopped
 volumes:
   local-db:

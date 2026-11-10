@@ -24,9 +24,9 @@ Route::prefix('muhasebe')->middleware(\App\Enerjisa\Http\Authenticate::class)->g
  Route::post('/entries/{id}/tags',[Controller::class,'tags'])->whereNumber('id');
  Route::delete('/entries/{id}',[Controller::class,'delete'])->whereNumber('id');
  Route::post('/entries/{id}/restore',[Controller::class,'restore'])->whereNumber('id');
- Route::post('/tahsilat',[\App\Accounting\ReceiptController::class,'handle']);
+ Route::post('/reminders/{id}',[\App\Accounting\ReminderController::class,'save'])->whereNumber('id');
+ Route::delete('/reminders/{id}',[\App\Accounting\ReminderController::class,'cancel'])->whereNumber('id');
  Route::post('/entries',[Controller::class,'store']);
- Route::post('/entries/{id}/payments',[Controller::class,'pay'])->whereNumber('id');
  Route::post('/quotes',[Controller::class,'quote']);
  Route::post('/quotes/{id}',[Controller::class,'status'])->whereNumber('id');
 });

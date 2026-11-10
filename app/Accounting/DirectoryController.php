@@ -9,12 +9,11 @@ class DirectoryController {
  $query=Contact::query()->where('member_id',Auth::guard('enerjisa')->id());
  if(!empty($data['kind']))$query->where('kind',$data['kind']);
  if(!empty($data['q'])) $query->whereRaw('strpos(normalized_name, ?) > 0',[mb_strtolower(trim($data['q']))]);
- $payments=DB::table('accounting_payments')->select('entry_id')->selectRaw('SUM(amount) AS paid')->groupBy('entry_id');
- $balances=DB::table('accounting_entries as e')->leftJoinSub($payments,'p','p.entry_id','=','e.id')->where('e.member_id',Auth::guard('enerjisa')->id())->whereNull('e.deleted_at')->whereNotNull('e.directory_id')->whereIn('e.type',['receivable','debt'])->select('e.directory_id','e.currency')->selectRaw("SUM(CASE WHEN e.type = 'receivable' THEN e.amount - COALESCE(p.paid,0) ELSE 0 END) AS receivable, SUM(CASE WHEN e.type = 'debt' THEN e.amount - COALESCE(p.paid,0) ELSE 0 END) AS debt")->groupBy('e.directory_id','e.currency')->get()->groupBy('directory_id');
- $today=now('Europe/Istanbul')->toDateString();
- $soon=now('Europe/Istanbul')->addDays(7)->toDateString();
- $dueItems=DB::table('accounting_entries as e')->leftJoinSub($payments,'p','p.entry_id','=','e.id')->where('e.member_id',Auth::guard('enerjisa')->id())->whereNull('e.deleted_at')->whereIn('e.type',['receivable','debt'])->whereNotNull('e.directory_id')->whereNotNull('e.due')->where('e.due','<=',$soon)->whereRaw('e.amount > COALESCE(p.paid,0)')->select('e.directory_id','e.type','e.due')->get()->groupBy('directory_id');
- $generalBalances=$balances->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>$rows->sum('receivable'),'debt'=>$rows->sum('debt')]);
+ $ledger=DB::table('accounting_entries')->where('member_id',Auth::guard('enerjisa')->id())->whereNull('deleted_at')->whereNotNull('directory_id')->get()->groupBy('directory_id');
+ $balances=$ledger->map(fn($rows)=>$rows->groupBy('currency')->map(fn($items,$currency)=>(object)['currency'=>$currency,'receivable'=>max(0,Ledger::net($items)),'debt'=>max(0,-Ledger::net($items))]));
+ $generalBalances=$ledger->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>max(0,Ledger::net($rows)),'debt'=>max(0,-Ledger::net($rows))]);
+ $today=now('Europe/Istanbul')->toDateString();$soon=now('Europe/Istanbul')->addDays(7)->toDateString();
+ $dueItems=$ledger->map(function($rows)use($soon){return $rows->filter(function($entry)use($rows,$soon){$net=Ledger::net($rows->where('currency',$entry->currency));return $entry->due && $entry->due<=$soon && (($entry->type==='receivable' && $net>0)||($entry->type==='debt' && $net<0));});});
  $allRecords=$query->orderBy('name')->get();
  foreach($allRecords as $record){$record->balances=$balances->get($record->id,collect());$record->due_alerts=$dueItems->get($record->id,collect())->groupBy(fn($item)=>($item->due<$today?'overdue':'upcoming').':'.$item->type)->map(fn($items)=>['count'=>$items->count(),'date'=>$items->min('due')]);$record->has_open_balance=$record->balances->contains(fn($balance)=>(int)$balance->receivable>0||(int)$balance->debt>0);}
  $allRecords=$allRecords->sortByDesc('has_open_balance')->values();

@@ -45,3 +45,8 @@ Artisan::command('enerjisa:telegram-webhook', function (): int {
 
     return Command::SUCCESS;
 })->purpose('Merkezi Telegram botunun güvenli webhook adresini kaydeder');
+
+Artisan::command('accounting:remind', function (): void {
+    $this->info(app(\App\Accounting\ReminderSender::class)->run().' cari hatırlatma gönderildi.');
+});
+Schedule::command('accounting:remind')->everyMinute()->withoutOverlapping(10);
