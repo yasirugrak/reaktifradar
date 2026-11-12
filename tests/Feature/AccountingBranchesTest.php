@@ -48,6 +48,16 @@ class AccountingBranchesTest extends TestCase {
   $this->assertDatabaseHas('accounting_quotes',['id'=>$quote,'deleted_at'=>null]);$this->assertSame(1500000,Ledger::balances($member->id,$id)['TRY']);
   $this->post('/muhasebe/rehber/'.$id.'/durum',['action'=>'unmark']);$this->get('/muhasebe')->assertSee('Ada');
  }
+ public function test_redlined_contacts_are_excluded_from_general_totals_until_unmarked(): void {
+  $this->member();$id=$this->contact();$this->entry($id);
+  $this->get('/muhasebe')->assertViewHas('generalBalances',fn($balances)=>$balances['TRY']['receivable']===1500000);
+  $this->post('/muhasebe/rehber/'.$id.'/durum',['action'=>'redline'])->assertRedirect();
+  foreach(['/muhasebe','/muhasebe/rehber?category=redlined','/muhasebe/rehber?q=Ada'] as $url)$this->get($url)->assertOk()->assertViewHas('generalBalances',fn($balances)=>$balances->isEmpty());
+  $this->getJson('/muhasebe/rehber?q=Ada')->assertOk()->assertJsonPath('total',0)->assertDontSee('150,00');
+  $this->get('/muhasebe?contact_id='.$id)->assertOk()->assertSee('150,00');
+  $this->post('/muhasebe/rehber/'.$id.'/durum',['action'=>'unmark'])->assertRedirect();
+  $this->get('/muhasebe')->assertViewHas('generalBalances',fn($balances)=>$balances['TRY']['receivable']===1500000);
+ }
  public function test_bank_accounts_are_saved_and_printed_in_contact_statement(): void {
   $this->member();$id=$this->contact();
   $banks=[['bank_name'=>'Test Bankası','holder'=>'Örnek Firma','iban'=>'TR000000000000000000000001','currency'=>'TRY'],['bank_name'=>'Euro Bankası','holder'=>'Örnek Firma','iban'=>'DE00000000000000000000','currency'=>'EUR']];

@@ -23,6 +23,6 @@ class ContactLifecycleController {
   });
   $restoredRedline=$action==='restore'&&DB::table('accounting_directory')->where('id',$id)->whereNotNull('redlined_at')->exists();
   $category=match($action){'restore'=>$restoredRedline?'redlined':'','delete'=>'deleted','redline'=>'redlined',default=>''};
-  return redirect('/muhasebe/rehber'.($category?'?category='.$category:''))->with('success',match($action){'delete'=>'Kişi ve bağlı kayıtları Silinen Kişiler listesine taşındı.','restore'=>'Kişi ve birlikte silinen kayıtları geri alındı.','redline'=>'Kişi Kırmızı Kalem Çekilenler listesine taşındı. Bakiyesi korunuyor.',default=>'Kişi cari hesaplara geri alındı.'});
+  return redirect('/muhasebe/rehber'.($category?'?category='.$category:''))->with('success',match($action){'delete'=>'Kişi ve bağlı kayıtları Silinen Kişiler listesine taşındı.','restore'=>'Kişi ve birlikte silinen kayıtları geri alındı.','redline'=>'Kişi Kırmızı Kalem Çekilenler listesine taşındı ve genel cari toplamdan çıkarıldı.',default=>'Kişi cari hesaplara geri alındı.'});
  }
 }

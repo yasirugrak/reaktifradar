@@ -12,7 +12,8 @@ class DirectoryController {
  if(!empty($data['q'])) $query->whereRaw('strpos(normalized_name, ?) > 0',[mb_strtolower(trim($data['q']))]);
  $ledger=BranchContext::table('accounting_entries')->where('member_id',Auth::guard('enerjisa')->id())->whereNull('deleted_at')->whereNotNull('directory_id')->get()->groupBy('directory_id');
  $balances=$ledger->map(fn($rows)=>$rows->groupBy('currency')->map(fn($items,$currency)=>(object)['currency'=>$currency,'receivable'=>max(0,Ledger::net($items)),'debt'=>max(0,-Ledger::net($items))]));
- $generalBalances=$ledger->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>max(0,Ledger::net($rows)),'debt'=>max(0,-Ledger::net($rows))]);
+ $activeContactIds=Contact::query()->where('member_id',Auth::guard('enerjisa')->id())->whereNull('redlined_at')->pluck('id')->all();
+ $generalBalances=$ledger->only($activeContactIds)->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>max(0,Ledger::net($rows)),'debt'=>max(0,-Ledger::net($rows))]);
  $today=now('Europe/Istanbul')->toDateString();$soon=now('Europe/Istanbul')->addDays(7)->toDateString();
  $dueItems=$ledger->map(function($rows)use($soon){return $rows->filter(function($entry)use($rows,$soon){$net=Ledger::net($rows->where('currency',$entry->currency));return $entry->due && $entry->due<=$soon && (($entry->type==='receivable' && $net>0)||($entry->type==='debt' && $net<0));});});
  $allRecords=$query->orderBy('name')->get();
