@@ -1,0 +1,4 @@
+<div class="contact-lifecycle no-print">
+<form method="post" action="/muhasebe/rehber/{{$profile->id}}/durum">@csrf<input type="hidden" name="action" value="{{$profile->redlined_at?'unmark':'redline'}}"><button class="row-action contact-warning contact-redline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/><path d="M12 20h8"/></svg>{{$profile->redlined_at?'Kırmızı kalemi kaldır':'Borçluya Kırmızı Kalem Çek'}}</button></form>
+<form method="post" action="/muhasebe/rehber/{{$profile->id}}/durum" onsubmit="return confirm('Kişi, işlemleri, teklifleri ve hatırlatmaları silinenlere taşınacak. Kayıtları daha sonra geri alabilirsiniz. Devam edilsin mi?')">@csrf<input type="hidden" name="action" value="delete"><button class="row-action contact-warning">Kişiyi Cariden Sil</button></form>
+</div>

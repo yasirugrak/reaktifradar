@@ -5,11 +5,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 class DirectoryController {
  public function index(Request $request) {
- $data=$request->validate(['kind'=>'nullable|in:person,company','q'=>'nullable|string|max:160']);
+ $data=$request->validate(['category'=>'nullable|in:redlined,deleted','kind'=>'nullable|in:person,company','q'=>'nullable|string|max:160']);
  $query=Contact::query()->where('member_id',Auth::guard('enerjisa')->id());
+ if(($data['category']??'')==='deleted')$query->onlyTrashed();elseif(($data['category']??'')==='redlined')$query->whereNotNull('redlined_at');else $query->whereNull('redlined_at');
  if(!empty($data['kind']))$query->where('kind',$data['kind']);
  if(!empty($data['q'])) $query->whereRaw('strpos(normalized_name, ?) > 0',[mb_strtolower(trim($data['q']))]);
- $ledger=DB::table('accounting_entries')->where('member_id',Auth::guard('enerjisa')->id())->whereNull('deleted_at')->whereNotNull('directory_id')->get()->groupBy('directory_id');
+ $ledger=BranchContext::table('accounting_entries')->where('member_id',Auth::guard('enerjisa')->id())->whereNull('deleted_at')->whereNotNull('directory_id')->get()->groupBy('directory_id');
  $balances=$ledger->map(fn($rows)=>$rows->groupBy('currency')->map(fn($items,$currency)=>(object)['currency'=>$currency,'receivable'=>max(0,Ledger::net($items)),'debt'=>max(0,-Ledger::net($items))]));
  $generalBalances=$ledger->flatten(1)->groupBy('currency')->map(fn($rows)=>['receivable'=>max(0,Ledger::net($rows)),'debt'=>max(0,-Ledger::net($rows))]);
  $today=now('Europe/Istanbul')->toDateString();$soon=now('Europe/Istanbul')->addDays(7)->toDateString();
@@ -31,7 +32,7 @@ class DirectoryController {
  $returnTo=$data['return_to']??null;unset($data['return_to']);
  $data['tags']=Tags::encode($r->input('tags'));
  $data['normalized_name']=mb_strtolower(trim($data['name']));
- $duplicate=Contact::query()->where('member_id',Auth::guard('enerjisa')->id())->where('kind',$data['kind'])->where('normalized_name',$data['normalized_name'])->where('id','!=',$id)->exists();
+ $duplicate=Contact::withTrashed()->where('member_id',Auth::guard('enerjisa')->id())->where('kind',$data['kind'])->where('normalized_name',$data['normalized_name'])->where('id','!=',$id)->exists();
  if($duplicate) throw \Illuminate\Validation\ValidationException::withMessages(['name'=>'Bu türde ve isimde başka bir kayıt var.']);
  try { $query->update($data+['updated_at'=>now()]); }
  catch (\Illuminate\Database\UniqueConstraintViolationException $e) {throw \Illuminate\Validation\ValidationException::withMessages(['name'=>'Bu türde ve isimde başka bir kayıt var.']);}
@@ -48,7 +49,8 @@ class DirectoryController {
  public function store(Request $request) {
  $data=$request->validate(['kind'=>'required|in:person,company','tags'=>'nullable|string|max:400']+ProfileController::rules());
  $data['tags']=Tags::encode($request->input('tags'));
- $key=['member_id'=>Auth::guard('enerjisa')->id(),'kind'=>$data['kind'],'normalized_name'=>mb_strtolower(trim($data['name']))];
+ $key=['branch_id'=>BranchContext::id(),'member_id'=>Auth::guard('enerjisa')->id(),'kind'=>$data['kind'],'normalized_name'=>mb_strtolower(trim($data['name']))];
+ if(Contact::withTrashed()->where($key)->whereNotNull('deleted_at')->exists())throw \Illuminate\Validation\ValidationException::withMessages(['name'=>'Bu kayıt Silinen Kişiler listesinde. Önce geri alın.']);
  Contact::query()->insertOrIgnore($key+$data+['created_at'=>now(),'updated_at'=>now()]);
  if(!$request->expectsJson()) return redirect('/muhasebe/rehber')->with('success','Kayıt rehbere eklendi.');
  return response()->json(Contact::query()->where($key)->first(['id','name','kind']),201);

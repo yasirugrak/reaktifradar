@@ -1,7 +1,10 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Accounting\Controller;
-Route::prefix('muhasebe')->middleware(\App\Enerjisa\Http\Authenticate::class)->group(function() {
+Route::prefix('muhasebe')->middleware([\App\Enerjisa\Http\Authenticate::class,\App\Accounting\BranchContext::class])->group(function() {
+ Route::post('/subeler',[\App\Accounting\BranchController::class,'store']);
+ Route::post('/subeler/sec',[\App\Accounting\BranchController::class,'select']);
+ Route::post('/rehber/{id}/durum',[\App\Accounting\ContactLifecycleController::class,'update'])->whereNumber('id');
  Route::get('/urunler',[\App\Accounting\CatalogController::class,'index']);
  Route::get('/urunler/{id}/data',[\App\Accounting\CatalogController::class,'data'])->whereNumber('id');
  Route::get('/urunler/ekle',[\App\Accounting\CatalogController::class,'edit']);
