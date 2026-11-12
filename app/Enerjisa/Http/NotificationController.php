@@ -54,9 +54,10 @@ class NotificationController
             ? $installationRules->firstWhere('id', (int) $request->rule_id) : $installationRules->first());
         abort_if($request->filled('rule_id') && ! $rule, 404);
         $telegramReady = app(TelegramSettings::class)->ready();
-        $history = NotificationDelivery::whereIn('rule_id', $rules->pluck('id'))->latest('id')->limit(30)->get();
+        $historyRules = NotificationRule::withTrashed()->where('account_id', $account->id)->get();
+        $history = NotificationDelivery::whereIn('rule_id', $historyRules->pluck('id'))->latest('id')->limit(30)->get();
 
-        return view('enerjisa.notifications', compact('account', 'installations', 'rules', 'selected', 'rule', 'installationRules', 'telegramReady', 'history'));
+        return view('enerjisa.notifications', compact('account', 'installations', 'rules', 'selected', 'rule', 'installationRules', 'telegramReady', 'history', 'historyRules'));
     }
 
     public function connect(Request $request): RedirectResponse
@@ -91,6 +92,26 @@ class NotificationController
         ]);
 
         return back()->with('success', 'Telegram bağlantısı kaldırıldı.');
+    }
+
+    public function delete(int $id): RedirectResponse
+    {
+        $account = $this->account();
+        $rule = NotificationRule::where('account_id', $account->id)->findOrFail($id);
+        $lock = \Illuminate\Support\Facades\Cache::lock('enerjisa-notification-'.$id, 600);
+        if (! $lock->get()) {
+            return back()->withErrors(['notification' => 'Bu bildirim şu anda gönderiliyor. Gönderim tamamlandıktan sonra tekrar silmeyi deneyin.']);
+        }
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($rule) {
+                $rule->update(['enabled' => false, 'telegram_link_hash' => null, 'telegram_link_expires_at' => null]);
+                $rule->delete();
+            });
+        } finally {
+            $lock->release();
+        }
+        return redirect()->route('enerjisa.notifications', ['installation' => $rule->installation])
+            ->with('success', 'Bildirim silindi. Geçmiş gönderim kayıtları korunuyor.');
     }
 
     public function save(Request $request): RedirectResponse

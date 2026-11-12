@@ -24,6 +24,11 @@ class Dispatcher
                 continue;
             }
             try {
+                // A rule may have been deleted after the dispatch list was read.
+                $rule = NotificationRule::where('enabled', true)->with('account')->find($rule->id);
+                if (! $rule) {
+                    continue;
+                }
                 $summary = null;
                 foreach (['email', 'telegram'] as $channel) {
                     if (! $rule->{$channel.'_enabled'}) {

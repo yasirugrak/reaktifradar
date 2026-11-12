@@ -173,6 +173,26 @@ class EnerjisaNotificationTest extends TestCase
         $this->assertTrue($first->fresh()->telegram_enabled);
     }
 
+    public function test_deleting_a_rule_preserves_history_and_other_rules_and_stops_dispatch(): void
+    {
+        $member = $this->member();
+        $first = $this->rule($member->account);
+        $second = $this->rule($member->account, ['enabled' => false]);
+        $first->deliveries()->create(['scheduled_date' => '2026-09-20', 'channel' => 'email', 'status' => 'sent', 'body' => 'Geçmiş rapor']);
+        $this->actingAs($member, 'enerjisa')->delete('/panel/notifications/'.$first->id)->assertRedirect('/panel/notifications?installation=123');
+        $this->assertSoftDeleted('enerjisa_notification_rules', ['id' => $first->id]);
+        $this->assertNotNull(NotificationRule::find($second->id));
+        $this->assertDatabaseCount('enerjisa_notification_deliveries', 1);
+        $this->get('/panel/notifications?installation=123')->assertOk()->assertSee('Geçmiş rapor')->assertSee('Silindi')
+            ->assertViewHas('installationRules', fn ($rules) => $rules->count() === 1);
+        $this->get('/panel/notifications?installation=123&rule_id='.$first->id)->assertNotFound();
+        $this->mock(Sender::class)->shouldNotReceive('send');
+        $this->assertSame(0, app(Dispatcher::class)->run());
+        $other = $this->member('delete-other@example.test');
+        $this->actingAs($other, 'enerjisa')->delete('/panel/notifications/'.$second->id)->assertNotFound();
+        $this->assertNotNull(NotificationRule::find($second->id));
+    }
+
     public function test_guest_cannot_access_or_change_notifications(): void
     {
         $this->get('/panel/notifications')->assertRedirect('/panel/login');

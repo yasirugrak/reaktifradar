@@ -21,6 +21,7 @@ Route::prefix('panel')->name('enerjisa.')->group(function () {
         Route::post('notifications/telegram/connect', [NotificationController::class, 'connect'])->middleware('throttle:10,1')->name('notifications.connect');
         Route::post('notifications/telegram/disconnect', [NotificationController::class, 'disconnect'])->name('notifications.disconnect');
         Route::post('notifications', [NotificationController::class, 'save'])->name('notifications.save');
+        Route::delete('notifications/{id}', [NotificationController::class, 'delete'])->whereNumber('id')->name('notifications.delete');
         Route::get('settings', [PanelController::class, 'settings'])->name('settings');
         Route::put('settings', [PanelController::class, 'saveSettings'])->name('settings.save');
         Route::post('connection', [PanelController::class, 'testConnection'])->middleware('throttle:10,1')->name('connection');
