@@ -35,7 +35,7 @@ class TelegramWebhookController
         if (! preg_match('/^\/start(?:@[a-zA-Z0-9_]+)? ([a-f0-9]{64})$/', $text, $match)) {
             return $this->reply($chat, 'Tesisat bildirimlerini almak için panelde “Telegram’ı bağla” düğmesini kullanın. Durdurmak için /stop yazabilirsiniz.');
         }
-        $installation = DB::transaction(function () use ($match, $chat): ?string {
+        $linkedRule = DB::transaction(function () use ($match, $chat): ?NotificationRule {
             $rule = NotificationRule::whereHas('account', fn ($query) => $query->where('is_active', true))->where('telegram_link_hash', hash('sha256', $match[1]))->lockForUpdate()->first();
             if (! $rule || ! $rule->telegram_link_expires_at || $rule->telegram_link_expires_at->isPast()) {
                 return null;
@@ -43,14 +43,14 @@ class TelegramWebhookController
             $rule->update(['chat_id' => $chat, 'telegram_connected_at' => now(),
                 'telegram_link_hash' => null, 'telegram_link_expires_at' => null]);
 
-            return $rule->installation;
+            return $rule;
         });
-        if ($installation === null) {
+        if ($linkedRule === null) {
             return $this->reply($chat, 'Bu bağlantı kullanılmış veya süresi dolmuş. Panelden yeni bağlantı oluşturun.');
         }
 
-        return $this->reply($chat, 'Telegram bağlandı. Tesisat '.$installation.' için panelde Telegram gönderimini açıp ayarlarınızı kaydedin.', [
-            'inline_keyboard' => [[['text' => 'Panele dön', 'url' => route('enerjisa.notifications', ['installation' => $installation])]]],
+        return $this->reply($chat, 'Telegram bağlandı. Tesisat '.$linkedRule->installation.' için panelde Telegram gönderimini açıp ayarlarınızı kaydedin.', [
+            'inline_keyboard' => [[['text' => 'Panele dön', 'url' => route('enerjisa.notifications', ['installation' => $linkedRule->installation, 'rule_id' => $linkedRule->id])]]],
         ]);
     }
 

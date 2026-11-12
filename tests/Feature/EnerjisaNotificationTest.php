@@ -79,6 +79,100 @@ class EnerjisaNotificationTest extends TestCase
         $this->post('/panel/notifications', array_replace($data, ['email_enabled' => '0']))->assertSessionHasErrors('channels');
     }
 
+    public function test_multiple_rules_for_one_installation_are_independent_and_owned(): void
+    {
+        $member = $this->member();
+        $this->actingAs($member, 'enerjisa');
+        $data = ['installation' => '123', 'enabled' => 1, 'frequency' => 'daily', 'send_time' => '09:00', 'weekday' => 1, 'send_healthy' => 1, 'email_enabled' => 1, 'telegram_enabled' => 0, 'email' => 'first@example.test'];
+        $this->post('/panel/notifications', $data)->assertSessionHasNoErrors();
+        $first = NotificationRule::firstOrFail();
+        $this->post('/panel/notifications', array_replace($data, ['frequency' => 'previous_day', 'send_time' => '10:00', 'email' => 'second@example.test']))->assertSessionHasNoErrors();
+        $second = NotificationRule::latest('id')->firstOrFail();
+        $this->assertNotSame($first->id, $second->id);
+        $this->get('/panel/notifications?installation=123&rule_id='.$second->id)->assertOk()->assertSee('Önceki gün')->assertViewHas('installationRules', fn ($rules) => $rules->count() === 2);
+        $this->post('/panel/notifications', array_replace($data, ['rule_id' => $second->id, 'enabled' => 0]))->assertSessionHasNoErrors();
+        $this->assertFalse($second->fresh()->enabled);
+        $this->assertTrue($first->fresh()->enabled);
+        $this->assertDatabaseCount('enerjisa_notification_rules', 2);
+        $other = $this->member('other-rule@example.test');
+        $this->actingAs($other, 'enerjisa');
+        $this->post('/panel/notifications', array_replace($data, ['rule_id' => $first->id]))->assertNotFound();
+        $this->get('/panel/notifications?installation=123&rule_id='.$first->id)->assertNotFound();
+        $this->post('/panel/notifications/telegram/connect', ['installation' => '123', 'rule_id' => $first->id])->assertNotFound();
+        $this->post('/panel/notifications/telegram/disconnect', ['installation' => '123', 'rule_id' => $first->id])->assertNotFound();
+    }
+
+    public function test_dispatcher_sends_each_rule_for_same_installation_once(): void
+    {
+        $account = $this->member()->account;
+        $this->rule($account, ['telegram_enabled' => false]);
+        $this->rule($account, ['frequency' => 'previous_day', 'telegram_enabled' => false]);
+        $this->mock(Summary::class)->shouldReceive('build')->twice()->andReturn(['healthy' => true, 'body' => 'Rapor', 'email' => ['state' => 'healthy']]);
+        $this->mock(Sender::class)->shouldReceive('send')->twice();
+        $this->assertSame(2, app(Dispatcher::class)->run());
+        $this->assertSame(0, app(Dispatcher::class)->run());
+    }
+
+    public function test_previous_day_report_is_fixed_to_yesterday_even_with_newer_measurements(): void
+    {
+        $rule = $this->rule($this->member()->account, ['frequency' => 'previous_day']);
+        Http::fake(['*oauth/token*' => Http::response(['access_token' => 'example-token']), '*energy-value*' => Http::sequence()->push(['values' => [
+            ['meter_date' => '20/09/2026 00:00:00', 't_top_kWh' => '100', 't_ri_kVarh' => '10', 't_rc_kVarh' => '10'],
+        ]])->push(['values' => [
+            ['meter_date' => '21/09/2026 00:00:00', 't_top_kWh' => '200', 't_ri_kVarh' => '20', 't_rc_kVarh' => '20'],
+            ['meter_date' => '21/09/2026 09:00:00', 't_top_kWh' => '300', 't_ri_kVarh' => '80', 't_rc_kVarh' => '80'],
+        ]])]);
+        $summary = app(Summary::class)->build($rule, CarbonImmutable::now('Europe/Istanbul'));
+        $this->assertSame('2026-09-20', $summary['email']['start']);
+        $this->assertSame('2026-09-20', $summary['email']['end']);
+        $this->assertTrue($summary['healthy']);
+        $this->assertEquals(10, $summary['email']['rows'][0]['inductive']);
+        $this->assertSame(0, $summary['email']['partial']);
+    }
+
+    public function test_previous_day_missing_data_does_not_fall_back_to_an_older_day(): void
+    {
+        $rule = $this->rule($this->member()->account, ['frequency' => 'previous_day']);
+        Http::fake(['*oauth/token*' => Http::response(['access_token' => 'example-token']), '*energy-value*' => Http::sequence()->push(['values' => [
+            ['meter_date' => '19/09/2026 00:00:00', 't_top_kWh' => '100', 't_ri_kVarh' => '10', 't_rc_kVarh' => '10'],
+            ['meter_date' => '20/09/2026 00:00:00', 't_top_kWh' => '200', 't_ri_kVarh' => '20', 't_rc_kVarh' => '20'],
+        ]])->push([])]);
+        $summary = app(Summary::class)->build($rule, CarbonImmutable::now('Europe/Istanbul'));
+        $this->assertSame('2026-09-20', $summary['email']['end']);
+        $this->assertFalse($summary['healthy']);
+    }
+
+    public function test_previous_day_partial_readings_are_not_reported_as_a_complete_healthy_day(): void
+    {
+        $rule = $this->rule($this->member()->account, ['frequency' => 'previous_day']);
+        Http::fake(['*oauth/token*' => Http::response(['access_token' => 'example-token']), '*energy-value*' => Http::sequence()->push(['values' => [
+            ['meter_date' => '20/09/2026 00:00:00', 't_top_kWh' => '100', 't_ri_kVarh' => '10', 't_rc_kVarh' => '10'],
+            ['meter_date' => '20/09/2026 23:00:00', 't_top_kWh' => '200', 't_ri_kVarh' => '20', 't_rc_kVarh' => '20'],
+        ]])->push([])]);
+        $summary = app(Summary::class)->build($rule, CarbonImmutable::now('Europe/Istanbul'));
+        $this->assertFalse($summary['healthy']);
+        $this->assertSame('incomplete', $summary['email']['state']);
+        $this->assertSame(1, $summary['email']['partial']);
+    }
+
+    public function test_telegram_connection_and_disconnection_affect_only_selected_rule(): void
+    {
+        $member = $this->member();
+        $first = $this->rule($member->account);
+        $second = $this->rule($member->account, ['frequency' => 'previous_day']);
+        $response = $this->actingAs($member, 'enerjisa')->post('/panel/notifications/telegram/connect', ['installation' => '123', 'rule_id' => $second->id])->assertRedirect();
+        $token = explode('start=', $response->headers->get('Location'))[1];
+        $response = $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('x', 32))->postJson('/panel/telegram/webhook', $this->telegramStart($token));
+        $response->assertOk();
+        $this->assertStringContainsString('rule_id='.$second->id, $response->json('reply_markup.inline_keyboard.0.0.url'));
+        $this->assertSame('100123', $first->fresh()->chat_id);
+        $this->assertSame('987654', $second->fresh()->chat_id);
+        $this->post('/panel/notifications/telegram/disconnect', ['installation' => '123', 'rule_id' => $second->id])->assertRedirect();
+        $this->assertNull($second->fresh()->chat_id);
+        $this->assertSame('100123', $first->fresh()->chat_id);
+        $this->assertTrue($first->fresh()->telegram_enabled);
+    }
+
     public function test_guest_cannot_access_or_change_notifications(): void
     {
         $this->get('/panel/notifications')->assertRedirect('/panel/login');
@@ -264,7 +358,7 @@ class EnerjisaNotificationTest extends TestCase
     {
         $member = $this->member();
         $rule = $this->rule($member->account);
-        $data = ['installation' => '123', 'enabled' => '1', 'frequency' => 'daily', 'send_time' => '09:00',
+        $data = ['rule_id' => $rule->id, 'installation' => '123', 'enabled' => '1', 'frequency' => 'daily', 'send_time' => '09:00',
             'weekday' => '1', 'send_healthy' => '1', 'email_enabled' => '0', 'telegram_enabled' => '1', 'chat_id' => '999999'];
         $this->actingAs($member, 'enerjisa')->post('/panel/notifications', $data)->assertSessionHasNoErrors();
         $this->assertSame('100123', $rule->fresh()->chat_id);

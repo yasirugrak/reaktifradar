@@ -15,7 +15,7 @@
 <div style="display:none;font-size:1px;line-height:1px;color:#eef3f6;max-height:0;max-width:0;opacity:0;overflow:hidden">{{ $theme['title'] }} Tesisat {{ $report['installation'] }} · {{ $report['period'] ?? '' }}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#eef3f6"><tr><td align="center" class="outer" style="padding:36px 16px">
 <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #dde6eb;border-radius:16px;overflow:hidden">
-<tr><td class="pad" style="padding:26px 36px;background:#112f3d;color:#ffffff"><div style="font-size:24px;font-weight:bold;letter-spacing:-0.5px;color:#8cd6d1">ReaktifRadar</div><div style="font-size:14px;font-weight:normal;margin-top:8px">{{ ($report['frequency'] ?? '') === 'weekly' ? 'Haftalık' : 'Günlük' }} durum raporu</div></td></tr>
+<tr><td class="pad" style="padding:26px 36px;background:#112f3d;color:#ffffff"><div style="font-size:24px;font-weight:bold;letter-spacing:-0.5px;color:#8cd6d1">ReaktifRadar</div><div style="font-size:14px;font-weight:normal;margin-top:8px">{{ match($report['frequency'] ?? '') {'weekly'=>'Haftalık','previous_day'=>'Önceki gün',default=>'Günlük'} }} durum raporu</div></td></tr>
 <tr><td class="pad" style="padding:32px 36px 24px">
 <span style="display:inline-block;padding:7px 11px;background:{{ $theme['bg'] }};color:{{ $theme['color'] }};font-size:11px;letter-spacing:1px;font-weight:bold;border-radius:6px">{{ $theme['tag'] }}</span>
 <h1 class="title" style="margin:18px 0 12px;font-size:30px;line-height:1.25;letter-spacing:-0.6px;color:#112f3d">{{ $theme['title'] }}</h1>

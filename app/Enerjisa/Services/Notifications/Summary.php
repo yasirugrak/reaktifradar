@@ -15,7 +15,9 @@ class Summary
     /** @return array{healthy: bool, body: string, email: array<string, mixed>} */
     public function build(NotificationRule $rule, CarbonImmutable $date): array
     {
-        $end = $date->startOfDay();
+        $date = $date->setTimezone('Europe/Istanbul');
+        $previousDay = $rule->frequency === 'previous_day';
+        $end = $previousDay ? $date->startOfDay()->subDay() : $date->startOfDay();
         $start = $rule->frequency === 'weekly' ? $end->subDays(6) : $end;
         $account = $rule->account;
         $snapshot = $account->queries()->where('kind', 'installations')->whereNull('error')->latest('id')->first();
@@ -33,7 +35,7 @@ class Summary
         try {
             app(Sync::class)->run($account, ['installation' => $rule->installation, 'period' => 'daily',
                 'start' => $start->subDays(2)->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'refresh' => true]);
-            $loaded = app(Readings::class)->load($account, $rule->installation, $start->subDays(2), $date);
+            $loaded = app(Readings::class)->load($account, $rule->installation, $start->subDays(2), $previousDay ? $end->addDay() : $date);
             $latest = null;
             foreach ($loaded['meters'] as $series) {
                 foreach ($series as $reading) {
@@ -42,7 +44,7 @@ class Summary
                     }
                 }
             }
-            if ($latest !== null) {
+            if ($latest !== null && ! $previousDay) {
                 // A midnight reading closes the preceding day; it alone does not open a measurable new day.
                 $end = ($latest->equalTo($latest->startOfDay()) ? $latest->subSecond() : $latest)->startOfDay();
                 $start = $rule->frequency === 'weekly' ? $end->subDays(6) : $end;
@@ -78,7 +80,7 @@ class Summary
                     }
                 }
             }
-            $healthy = $total > 0 && $alerts === 0 && $invalid === 0;
+            $healthy = $total > 0 && $alerts === 0 && $invalid === 0 && (! $previousDay || $partial === 0);
             $status = $healthy ? 'Gelen ölçümlere göre sorun yok. İncelenen oranlar belirlenen eşikler içinde.'
                 : ($alerts > 0 ? 'Dikkat: '.$alerts.' sayaç/gün için eşik aşımı var.' : 'Veriler eksik veya hesaplanamıyor; sorun olmadığı doğrulanamadı.');
             if ($partial > 0) {
@@ -91,7 +93,7 @@ class Summary
                 $status .= "\nSon ölçüm: ".$latest->format('d.m.Y H:i').' (İstanbul)';
             }
             $body = $header.$status."\n".implode("\n", $details)
-                ."\nEşikler: endüktif > %20, kapasitif > %15.\nGünlük endeks farkları esas alınır. Son gün, alınabilen son ölçüme kadar hesaplanır.";
+                ."\nEşikler: endüktif > %20, kapasitif > %15.\nGünlük endeks farkları esas alınır.".($previousDay ? ' Önceki takvim günü raporlanır; eksik veriler başka bir günle tamamlanmaz.' : ' Son gün, alınabilen son ölçüme kadar hesaplanır.');
 
             usort($emailRows, fn ($a, $b) => ($a['status'] === 'ok' ? 1 : 0) <=> ($b['status'] === 'ok' ? 1 : 0));
             $email += ['state' => $healthy ? 'healthy' : ($alerts > 0 ? 'alert' : 'incomplete'),

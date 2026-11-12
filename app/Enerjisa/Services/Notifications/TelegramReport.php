@@ -16,7 +16,9 @@ class TelegramReport
             'unavailable' => '⚠️ Güncel veriler alınamadı',
             default => '⚠️ Veriler eksik veya hesaplanamıyor',
         };
-        $text = '<b>⚡ ReaktifRadar</b>'."\n".(($report['frequency'] ?? '') === 'weekly' ? 'Haftalık' : 'Günlük')." enerji raporu\n\n"
+        $text = '<b>⚡ ReaktifRadar</b>'."\n".(match ($report['frequency'] ?? '') {
+            'weekly' => 'Haftalık','previous_day' => 'Önceki gün',default => 'Günlük'
+        })." enerji raporu\n\n"
             .'<b>'.$status.'</b>'."\n\n"
             .'<b>Tesisat:</b> <code>'.$this->escape($report['installation'] ?? '', 60)."</code>\n";
         if (! empty($report['owner'])) {
